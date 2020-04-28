@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<base target="_top">
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+<link rel="stylesheet" type="text/css" href="https://dropbox-appbox-static.s3.amazonaws.com/static/binder/stylesheets/font-sharp-grotesk.css" /> 
+<?!= include('css'); ?>
+</head>
+<body>
+<div id="container"><div id="nav"><h1>···</h1></div></div>
+</body>
+<script>
+var m = function createElement(type, attrs, ...children) {
+  var node = document.createElement(type);
+  for (var prop in attrs) {
+    if (!attrs.hasOwnProperty(prop)) continue;
+    if (attrs[prop] != undefined) node[prop] = attrs[prop];
+  }
+  
+  function append(child) {
+    if (Array.isArray(child)) return child.forEach(append); 
+    if (typeof child == 'string') child = document.createTextNode(child);
+    if (child) node.appendChild(child);
+  }
+  
+  children.forEach(append);
+  return node;
+}
+
+
+function fetch() {
+  var ignoreCache = true;
+  console.log("Fetching");
+  document.body.classList.add("loading");
+  google.script.run.withSuccessHandler(gotData).getData(ignoreCache);
+}
+
+var cachedResponse;
+
+function gotData(response) {
+  cachedResponse = JSON.parse(response);
+  cachedResponse.data.shift();
+  document.body.classList.remove("loading");
+  render(cachedResponse);
+}
+
+var activeTag;
+
+function filterByTag(tag) {
+  activeTag = tag;
+  google.script.history.push({}, undefined,tag);
+  var filteredResponse = cachedResponse.data.filter(item => item[4].includes(tag));
+  render({data: filteredResponse});
+}
+
+function clearFilters() {
+  activeTag = null;
+  render(cachedResponse);
+}
+
+google.script.history.setChangeHandler(function (e) {
+  var hash = e.location.hash;
+  console.log(e.location.hash);
+  if (hash.length) {
+    filterByTag(hash)
+  } else {
+    clearFilters()
+  }
+});
+
+
+
+function render(response) {
+  if (response.error) {
+    alert(response.error);
+    return;
+  }
+ 
+
+  var container = document.getElementById("container");
+  if (container) container.parentElement.removeChild(container);
+  
+  var thumbnails = []
+  
+  var data = response.data;
+  data.forEach(function(row) {
+  var ts = row[0]
+  var author = row[1].split("@").shift()
+  var url = row[2]
+  if (!url) return;
+  var description = row[3]
+  var tags = row[4]
+  var title = row[5]
+  var thumbnail = row[6]
+  var modified = row[7]
+  
+  var tagEls = [];
+  tags = tags.split(",");
+  tags.forEach(tag => {
+  tag = tag.trim();
+  if (tag.length > 0) {
+    var tagEl = m("a", {className: "tag", href: "#"}, tag)
+    tagEl.onclick = function() { filterByTag(tag); return false; };
+    tagEls.push(tagEl);
+    }
+  })
+  
+  thumbnails.push(m("div", {className: "file", href:url}, 
+    m("a", {href:url, target:"_blank"}, m("div", {className:"thumbnail", style:"background-image:url('" + thumbnail + "')"})),
+    m("div", {className:"info"},
+      m("div", {className:"title"}, m("a", {href:url, target:"_blank"}, title)),
+      m("span", {className:"description"}, description ? description + " " : ""),
+      m("span", {className:"author"}, "—" + author), m("br"), tagEls
+    )
+  ));
+  
+
+  
+  });
+  console.log(response)
+  
+  if (activeTag) {
+    console.log(activeTag)
+    clearFilterLink = m("a", {href: "#"}, "clear");
+    clearFilterLink.onclick = function() { clearFilters(); return false; };
+    subheader = m("div", {id:"subheader"},
+      m("h2", {},
+        m("span", {}, "Tagged: "),
+        m("span", {className: "activeTag"}, activeTag),
+        clearFilterLink
+      ),
+    )
+  } else {
+    subheader = m("div");
+  }
+
+  
+  container = m("div", {id:"container"},
+    m("div", {id:"nav"}, 
+      m("h1", {},
+      m("div", {id:"logo"}),
+      "Figment · Dropbox Design"),
+      m("div", {id:"toolbar"}, 
+        m("a", {id:"add",href:"http://dbx.link/figment-add", target:"_blank"}, m("icon",{},"add"),"")
+      )
+    ),
+    subheader,
+    m("div", {id:"files"},
+    thumbnails
+    )
+  )
+  document.body.appendChild(container);
+  window.localStorage.setItem("pagecache", container.innerHTML)
+}
+fetch(); 
+
+var cache = window.localStorage.getItem("pagecache");
+if (cache) document.getElementById("container").innerHTML = cache;
+
+</script>
+
+</html>
