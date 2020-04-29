@@ -26,16 +26,12 @@ function figmainfo(url) {
   var response = UrlFetchApp.fetch(infoUrl, {headers: {"X-FIGMA-TOKEN": scriptProperties.getProperty("token")}});
   var json = response.getContentText();
   var data = JSON.parse(json);
-Logger.log(data.title);
-  var canvases = 
-  Logger.log(data.name);
   var array = [[data.name, data.thumbnailUrl, data.lastModified]]
-  return array;
-  
-  
+  return array;  
 }
 
 var GALLERY_CACHE = "GALLERY_CACHE"
+
 function getData(ignoreCache) {
   var cache = CacheService.getScriptCache();
   if (!ignoreCache && (cached = cache.get(GALLERY_CACHE)) != null) {    
@@ -43,7 +39,6 @@ function getData(ignoreCache) {
   }
   
   var ss = SpreadsheetApp.openByUrl('https://docs.google.com/spreadsheets/d/1kYm8Xi5NRnPaLWvPfy4ERHQyCT2iGJZbw9kyNe5aICQ/');
-  
   var sheet = ss.getSheetByName("Site Data");
   if (sheet == undefined) return JSON.stringify({"error": "not found"});
 
@@ -74,7 +69,7 @@ function include(filename) {
   return HtmlService.createHtmlOutputFromFile(filename).getContent();
 }
 
-function getAuthorDataFromDropabout(username) {
+function getAuthorData(username) {
   var url = "https://app.dropboxer.net/dropabout/api/dropboxer/drew@dropbox.com";
   var response = UrlFetchApp.fetch(url, {'muteHttpExceptions': true});
   Logger.log(response); 

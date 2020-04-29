@@ -12,6 +12,7 @@
 <div id="container"><div id="nav"><h1>···</h1></div></div>
 </body>
 <script>
+
 var m = function createElement(type, attrs, ...children) {
   var node = document.createElement(type);
   for (var prop in attrs) {
@@ -30,14 +31,14 @@ var m = function createElement(type, attrs, ...children) {
 }
 
 
+var cachedResponse;
+
 function fetch() {
   var ignoreCache = true;
   console.log("Fetching");
   document.body.classList.add("loading");
   google.script.run.withSuccessHandler(gotData).getData(ignoreCache);
 }
-
-var cachedResponse;
 
 function gotData(response) {
   cachedResponse = JSON.parse(response);
@@ -50,42 +51,36 @@ var activeTag;
 var activeAuthor;
 
 function filterByTag(tag) {
+  google.script.history.push({}, undefined, tag);
   activeTag = tag;
-  google.script.history.push({}, undefined,tag);
-  var filteredResponse = cachedResponse.data.filter(item => item[4].includes(tag));
-  render({data: filteredResponse});
+  render();
+  return false;
 }
 
 function filterByAuthor(username) {
   activeAuthor = username;
-  console.log(email)
-  var filteredResponse = cachedResponse.data.filter(item => item[1].includes(username));
-  console.log(filteredResponse)
-  render({data: filteredResponse});
+  render();
+  return false;
 }
 
 function clearTag() {
+  google.script.history.push({}, undefined, "");
   activeTag = null;
-  if (activeAuthor) {
-    filterByAuthor(activeAuthor);
-  } else {
-    render(cachedResponse);
-  }
+  render();
+  return false;
 }
 
 function clearAuthor() {
   activeAuthor = null;
-  if (activeTag) {
-    filterByTag(activeTag);
-  } else {
-    render(cachedResponse);
-  }
+  render()
+  return false;
 }
 
 function clearFilters() {
   activeTag = null;
   activeAuthor = null;
-  render(cachedResponse);
+  render();
+  return false;
 }
 
 google.script.history.setChangeHandler(function (e) {
@@ -98,9 +93,9 @@ google.script.history.setChangeHandler(function (e) {
   }
 });
 
-
-
 function render(response) {
+  if (!response) response = cachedResponse;
+  
   if (response.error) {
     alert(response.error);
     return;
@@ -113,45 +108,43 @@ function render(response) {
   var thumbnails = []
   
   var data = response.data;
+  
+  if (activeTag) data = data.filter(item => item[4].includes(activeTag))
+  if (activeAuthor) data = data.filter(item => item[1].includes(activeAuthor)); 
+  
   data.forEach(function(row) {
-  var ts = row[0]
-  var author = row[1].split("@").shift()
-  var url = row[2]
-  if (!url) return;
-  var description = row[3]
-  var tags = row[4]
-  var title = row[5]
-  var thumbnail = row[6]
-  var modified = row[7]
+    var url = row[2]
+    if (!url) return;
+    var ts = row[0]
+    var author = row[1].split("@").shift()
+    var description = row[3]
+    var tags = row[4]
+    var title = row[5]
+    var thumbnail = row[6]
+    var modified = row[7]
   
-  var tagEls = [];
-  tags = tags.split(",");
-  tags.forEach(tag => {
-  tag = tag.trim();
-  if (tag.length > 0) {
-    var tagEl = m("a", {className: "tag", href: "#"}, tag)
-    tagEl.onclick = function() { filterByTag(tag); return false; };
-    tagEls.push(tagEl);
-    }
-  })
+    var tagEls = [];
+    tags = tags.split(",");
+    tags.forEach(tag => {
+    tag = tag.trim();
+    if (tag.length > 0) {
+      var tagEl = m("a", {className: "tag", href: "#", onclick: () => { return filterByTag(tag)}}, tag)
+      tagEls.push(tagEl);
+      }
+    });
   
-  var authorEl = m("a", {className:"author", href: "#"}, "—" + author)
-  authorEl.onclick = function() { filterByAuthor(author); return false; };
-  
-  var nativeURL = url.replace("https://www.figma.com/", "figma://");
-  thumbnails.push(m("div", {className: "file", href:url}, 
-    m("a", {href:url, target:"_blank"}, m("div", {className:"thumbnail", style:"background-image:url('" + thumbnail + "')"})),
-    m("div", {className:"info"},
-      m("div", {className:"title"}, m("a", {href:url}, title)),
-      m("span", {className:"description"}, description ? description + " " : ""),
-      authorEl, m("br"), tagEls
-    )
-  ));
-  
-
-  
+    var authorEl = m("a", {className:"author", href: "#", onclick: () => { return filterByAuthor(author) }}, "—" + author)
+    
+    var nativeURL = url.replace("https://www.figma.com/", "figma://");
+    thumbnails.push(m("div", {className: "file", href:url}, 
+      m("a", {href:url, target:"_blank"}, m("div", {className:"thumbnail", style:"background-image:url('" + thumbnail + "')"})),
+      m("div", {className:"info"},
+        m("div", {className:"title"}, m("a", {href:url}, title)),
+        m("span", {className:"description"}, description ? description + " " : ""),
+        authorEl, m("br"), tagEls
+      )
+    ));
   });
-  console.log(response)
   
   var subheader = document.createElement("div")
   if (activeAuthor) {
@@ -164,7 +157,7 @@ function render(response) {
   var addSheet = m("div", {className: "add-sheet"},
     m("form", {onsubmit:submitAddForm}, 
       m("label", {for:"url", type:"text"}, "Figma URL"),
-      m("input", {id:"url", type:"text", autocomplete:"off", placeholder:"https://figma.com/....", onfocus:getClipboard}),
+      m("input", {id:"url", type:"text", autocomplete:"off", placeholder:"https://figma.com/...."}),
       m("caption",{}, "set a custom thumbnail first. 2:1 ratio is preferred"),
       m("label", {for:"desc", type:"text"}, "Description"),
       m("input", {id:"desc", type:"text", autocomplete:"off", placeholder:"Tell us about it..."}),
@@ -204,47 +197,26 @@ function render(response) {
 fetch();
 
 function renderTagHeaderTemplate() {
-  clearFilterLink = m("a", {href: "#"}, "clear tag");
-  clearFilterLink.onclick = function() { clearTag(); return false; };
-  els = m("div", {id:"subheader"},
-    m("h3", {},
-      m("span", {}, "Tagged: "),
+  return m("div", {id:"subheader"},
+      m("span", {}, "Tagged with "),
       m("span", {className: "activeTag"}, activeTag),
-      clearFilterLink
-    ),
+      m("a", {href: "#", onclick: clearTag}, m("icon",{},"cancel"))
   )
-  return els
 }
 
 function renderAuthorHeaderTemplate() {
-  // google.script.run.withSuccessHandler(updateAuthorHeaderTemplate).getAuthorDataFromDropabout(activeAuthor);
-  clearFilterLink = m("a", {href: "#"}, "x");
-  clearFilterLink.onclick = function() { clearAuthor(); return false; };
-  els = m("div", {id:"subheader", className:"author"},
-    m("h2", {},
-      m("span", {}, "Uploaded by "),
-      m("span", {className: "activeTag"}, activeAuthor),
-      clearFilterLink
-    ),
+  return m("div", {id:"subheader", className:"author"},
+      m("span", {}, "Shared by "),
+      m("span", {className: "activeAuthor"}, activeAuthor),
+      m("a", {href: "#", onclick: clearAuthor}, m("icon",{},"cancel"))
   )
-  return els
 }
 
-// TODO: get profile from Dropabout and make a header out of it for "user page"
+// TODO: get profile and make a header out of it for "user page"
 // function updateAuthorHeaderTemplate(response) {
 //  console.log(response);
 // }
 
-function getClipboard(e) {
-navigator.clipboard.readText()
-  .then(text => {
-    e.target.value = text;
-  })
-  .catch(err => {
-    console.error('Failed to read clipboard contents: ', err);
-  });
-
-}
 function submitAddForm(e) {
   var form = e.target;
   window.localStorage.setItem("email", form.email.value);
@@ -257,7 +229,6 @@ function submitAddForm(e) {
     return false;
   }
   
-  
   var row = [form.email.value, form.url.value, form.desc.value, form.tags.value];
   google.script.run.withSuccessHandler(() => {
     fetch();
@@ -265,8 +236,14 @@ function submitAddForm(e) {
   }).addData(row);
   return false;
 }
+
+
 var cache = window.localStorage.getItem("pagecache");
 if (cache) document.getElementById("container").innerHTML = cache;
+
+google.script.url.getLocation(function(location) {
+  activeTag = location.hash;
+});
 
 </script>
 
