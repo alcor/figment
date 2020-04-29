@@ -5,12 +5,11 @@ font-family: 'Space Mono', monospace;
 
 }
 body {
-background-color: #fafafa;
+  background-color: #fafafa;
   xfont-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
   font-size:14px;
   line-height:140%;
-margin:0;
-
+  margin:0;
 }
 
 body, a {
@@ -40,9 +39,10 @@ margin-left:-1em;
   display:flex;
   flex-direction:row;
   justify-content:space-between;
-  padding: 0 6em 0 5em;;
+  padding: 0 8vw 0 8vw;;
   align-content:center;
   margin-bottom:2em;
+  overflow:hidden;
 }
 
 #add {
@@ -54,7 +54,12 @@ line-height:64px;
   flex-direction:row;
   flex-wrap:wrap;
   /*justify-content:space-around*/
-  margin-left:6em;
+  margin: 0 9vw;
+}
+
+#subheader.author {
+  border-bottom: 1px solid rgba(0,0,0,0.1);
+  margin-bottom: 1em;
 }
 
 h2 {
@@ -64,7 +69,18 @@ h2 .activeTag {
   font-weight: 700;
 }
 h2 a {
-  font-size: .66em;
+  font-size: 1em;
+  margin-left: 1em;
+}
+
+h3 {
+  font-weight: 400;
+}
+h3 .activeTag {
+  font-weight: 700;
+}
+h3 a {
+  font-size: .75em;
   margin-left: 1em;
 }
 
@@ -72,38 +88,40 @@ h2 a {
   display:flex;
   flex-direction:row;
   flex-wrap:wrap;
+  justify-content:space-between;
   /*justify-content:space-around*/
-  margin-left:5em;
+  margin: 0 8vw;
 }
 
-.file {
-  width:320px;
+.file, .flex-spacer {
+  min-width:300px;
+  max-width:500px;
+  flex: 1 0 auto;
+  flex-basis:300px;
   padding: 0em;
   margin: 1em;
   }
   
 .file .thumbnail {
-  width:320px;
-  height:160px;
+  padding-top:50%;
   background-size:cover;
   background-position:top left;
   background-color:#2d2d2d;
   margin-bottom:1em;
-    xbox-shadow: 0 3px 6px rgba(0,0,0,0.16), 0 3px 6px rgba(0,0,0,0.23);
-box-shadow: inset 0 1px 3px rgba(0,0,0,0.08), inset 0 2px 4px rgba(0,0,0,0.12);;
-border-radius:2px;
-transition: transform 0.1s ease-out;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.08), inset 0 2px 4px rgba(0,0,0,0.12);;
+  border-radius:2px;
+  transition: transform 0.1s ease-out;
 }
 
 .file:hover .thumbnail {
-transform:scale(1.03);
+  transform:scale(1.03);
 
 }
 
 .file .title {
-font-weight:400;
-font-size:larger;
-margin-bottom:.4em;
+  font-weight:400;
+  font-size:larger;
+  margin-bottom:.4em;
 }
 
 .file .info {
@@ -162,4 +180,44 @@ body{
 transition:filter .8s ease-out, opacity .3s;
 }
 
+
+.add-sheet {
+  background: white;
+  padding: 2em;
+  position: absolute;
+  z-index:3;
+  top: 3em;
+  right: 1em;
+  box-shadow: 0 3px 6px rgba(0,0,0,0.16), 0 3px 6px rgba(0,0,0,0.23);
+  display:none;
+}
+
+body.add .add-sheet {
+display:block;
+}
+
+.add-sheet form {
+  display:flex;
+  flex-direction:column;
+}
+
+.add-sheet form input{
+  margin: 0.5em 0 1em 0;
+  min-width:320px;
+}
+
+.add-sheet button {
+width:6em;
+padding:1em;
+margin-top:0.5em;
+background-color:#FF7262;
+color:white;
+border:none;
+}
+
+caption {
+margin-top:-1em;
+margin-bottom:1em;
+font-size: 75%;
+}
 </style>

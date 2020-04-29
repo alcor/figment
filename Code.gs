@@ -1,17 +1,13 @@
 function doGet(e) {
   var template = HtmlService.createTemplateFromFile('index')
-  //template.ladder = e.parameter.ladder || "default";
-  return template.evaluate().setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+  var output = template.evaluate();
+  return output
+    .addMetaTag('viewport', 'width=device-width, initial-scale=1')
+    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
 }
 
 function test() {
   Logger.log(figmainfo("https://www.figma.com/file/aTdiAlDwv5wdOcLGiwKUIM/IA-Convergence-2020?node-id=335%3A152421"))
-}
-
-
-function figmainfos(urls) {
-
-
 }
 
 function figmainfo(url) {
@@ -61,10 +57,26 @@ function getData(ignoreCache) {
   return response; 
 }
 
+function addData(row) {
+  var ss = SpreadsheetApp.openByUrl('https://docs.google.com/spreadsheets/d/1kYm8Xi5NRnPaLWvPfy4ERHQyCT2iGJZbw9kyNe5aICQ/');
+  var sheet = ss.getSheetByName("Gallery");
+  if (sheet == undefined) return JSON.stringify({"error": "not found"});
+  var timestamp = Utilities.formatDate(new Date(), "PST", "yyyy-MM-dd HH:mm:ss");
+  row.unshift(timestamp);
+  sheet.appendRow(row);
+}
+
 function testData() {
   Logger.log(getData())
 }
 
 function include(filename) {
   return HtmlService.createHtmlOutputFromFile(filename).getContent();
+}
+
+function getAuthorDataFromDropabout(username) {
+  var url = "https://app.dropboxer.net/dropabout/api/dropboxer/drew@dropbox.com";
+  var response = UrlFetchApp.fetch(url, {'muteHttpExceptions': true});
+  Logger.log(response); 
+  return response;
 }

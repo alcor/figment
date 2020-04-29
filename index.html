@@ -47,6 +47,7 @@ function gotData(response) {
 }
 
 var activeTag;
+var activeAuthor;
 
 function filterByTag(tag) {
   activeTag = tag;
@@ -55,8 +56,35 @@ function filterByTag(tag) {
   render({data: filteredResponse});
 }
 
+function filterByAuthor(username) {
+  activeAuthor = username;
+  console.log(email)
+  var filteredResponse = cachedResponse.data.filter(item => item[1].includes(username));
+  console.log(filteredResponse)
+  render({data: filteredResponse});
+}
+
+function clearTag() {
+  activeTag = null;
+  if (activeAuthor) {
+    filterByAuthor(activeAuthor);
+  } else {
+    render(cachedResponse);
+  }
+}
+
+function clearAuthor() {
+  activeAuthor = null;
+  if (activeTag) {
+    filterByTag(activeTag);
+  } else {
+    render(cachedResponse);
+  }
+}
+
 function clearFilters() {
   activeTag = null;
+  activeAuthor = null;
   render(cachedResponse);
 }
 
@@ -107,12 +135,16 @@ function render(response) {
     }
   })
   
+  var authorEl = m("a", {className:"author", href: "#"}, "—" + author)
+  authorEl.onclick = function() { filterByAuthor(author); return false; };
+  
+  var nativeURL = url.replace("https://www.figma.com/", "figma://");
   thumbnails.push(m("div", {className: "file", href:url}, 
     m("a", {href:url, target:"_blank"}, m("div", {className:"thumbnail", style:"background-image:url('" + thumbnail + "')"})),
     m("div", {className:"info"},
-      m("div", {className:"title"}, m("a", {href:url, target:"_blank"}, title)),
+      m("div", {className:"title"}, m("a", {href:url}, title)),
       m("span", {className:"description"}, description ? description + " " : ""),
-      m("span", {className:"author"}, "—" + author), m("br"), tagEls
+      authorEl, m("br"), tagEls
     )
   ));
   
@@ -121,21 +153,28 @@ function render(response) {
   });
   console.log(response)
   
+  var subheader = document.createElement("div")
+  if (activeAuthor) {
+    subheader.appendChild(renderAuthorHeaderTemplate())
+  } 
   if (activeTag) {
-    console.log(activeTag)
-    clearFilterLink = m("a", {href: "#"}, "clear");
-    clearFilterLink.onclick = function() { clearFilters(); return false; };
-    subheader = m("div", {id:"subheader"},
-      m("h2", {},
-        m("span", {}, "Tagged: "),
-        m("span", {className: "activeTag"}, activeTag),
-        clearFilterLink
-      ),
-    )
-  } else {
-    subheader = m("div");
+    subheader.appendChild(renderTagHeaderTemplate())
   }
 
+  var addSheet = m("div", {className: "add-sheet"},
+    m("form", {onsubmit:submitAddForm}, 
+      m("label", {for:"url", type:"text"}, "Figma URL"),
+      m("input", {id:"url", type:"text", autocomplete:"off", placeholder:"https://figma.com/....", onfocus:getClipboard}),
+      m("caption",{}, "set a custom thumbnail first. 2:1 ratio is preferred"),
+      m("label", {for:"desc", type:"text"}, "Description"),
+      m("input", {id:"desc", type:"text", autocomplete:"off", placeholder:"Tell us about it..."}),
+      m("label", {for:"email", type:"text"}, "Email"),
+      m("input", {id:"email", type:"text", autocomplete:"on", placeholder:"example@dropbox.com", value: window.localStorage.getItem("email") || ""}),
+      m("label", {for:"tags", type:"text"}, "Tags"),
+      m("input", {id:"tags", type:"text", autocomplete:"on", placeholder:"onboarding, exploration"}),
+      m("button", {type:"submit", id:"add-button"}, "Add")
+      )
+  )
   
   container = m("div", {id:"container"},
     m("div", {id:"nav"}, 
@@ -143,19 +182,89 @@ function render(response) {
       m("div", {id:"logo"}),
       "Figment · Dropbox Design"),
       m("div", {id:"toolbar"}, 
-        m("a", {id:"add",href:"http://dbx.link/figment-add", target:"_blank"}, m("icon",{},"add"),"")
+        m("div", {id:"add",onclick: () => {document.body.classList.toggle("add")}, target:"_blank"},
+          m("icon",{},"add"),""),
+        addSheet
       )
     ),
     subheader,
     m("div", {id:"files"},
-    thumbnails
+    thumbnails,
+    m("div", {className:"flex-spacer"}),
+    m("div", {className:"flex-spacer"}),
+    m("div", {className:"flex-spacer"}),
+    m("div", {className:"flex-spacer"}),
+    m("div", {className:"flex-spacer"}),
+    m("div", {className:"flex-spacer"})
     )
   )
   document.body.appendChild(container);
   window.localStorage.setItem("pagecache", container.innerHTML)
 }
-fetch(); 
+fetch();
 
+function renderTagHeaderTemplate() {
+  clearFilterLink = m("a", {href: "#"}, "clear tag");
+  clearFilterLink.onclick = function() { clearTag(); return false; };
+  els = m("div", {id:"subheader"},
+    m("h3", {},
+      m("span", {}, "Tagged: "),
+      m("span", {className: "activeTag"}, activeTag),
+      clearFilterLink
+    ),
+  )
+  return els
+}
+
+function renderAuthorHeaderTemplate() {
+  // google.script.run.withSuccessHandler(updateAuthorHeaderTemplate).getAuthorDataFromDropabout(activeAuthor);
+  clearFilterLink = m("a", {href: "#"}, "x");
+  clearFilterLink.onclick = function() { clearAuthor(); return false; };
+  els = m("div", {id:"subheader", className:"author"},
+    m("h2", {},
+      m("span", {}, "Uploaded by "),
+      m("span", {className: "activeTag"}, activeAuthor),
+      clearFilterLink
+    ),
+  )
+  return els
+}
+
+// TODO: get profile from Dropabout and make a header out of it for "user page"
+// function updateAuthorHeaderTemplate(response) {
+//  console.log(response);
+// }
+
+function getClipboard(e) {
+navigator.clipboard.readText()
+  .then(text => {
+    e.target.value = text;
+  })
+  .catch(err => {
+    console.error('Failed to read clipboard contents: ', err);
+  });
+
+}
+function submitAddForm(e) {
+  var form = e.target;
+  window.localStorage.setItem("email", form.email.value);
+  
+  if (!form.email.value.length) {
+    alert("Please enter your email address")
+    return false;
+  } else if (!form.url.value.length) {
+    alert("Please enter a figma URL");
+    return false;
+  }
+  
+  
+  var row = [form.email.value, form.url.value, form.desc.value, form.tags.value];
+  google.script.run.withSuccessHandler(() => {
+    fetch();
+    document.body.classList.remove("add");
+  }).addData(row);
+  return false;
+}
 var cache = window.localStorage.getItem("pagecache");
 if (cache) document.getElementById("container").innerHTML = cache;
 
