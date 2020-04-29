@@ -1,5 +1,5 @@
 function doGet(e) {
-  var template = HtmlService.createTemplateFromFile('index')
+  var template = HtmlService.createTemplateFromFile('gas/index')
   var output = template.evaluate();
   return output
     .addMetaTag('viewport', 'width=device-width, initial-scale=1')
