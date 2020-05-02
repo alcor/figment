@@ -30,6 +30,25 @@ function figmainfo(url) {
   return array;  
 }
 
+function testweb() {
+  webinfo("https://www.figma.com/file/aTdiAlDwv5wdOcLGiwKUIM/IA-Convergence-2020?node-id=1878%3A64885");
+}
+
+function webinfo(url) {
+  Logger.log(url)
+}
+
+
+function testuser() {
+  Logger.log(getUserInfo("nj@dropbox.com"));
+}
+
+function getUserInfo(email) {
+  var user = AdminDirectory.Users.get(email, {viewType:'domain_public'});
+  Logger.log('User data:\n %s', JSON.stringify(user, null, 2));
+  return user;
+}
+
 var GALLERY_CACHE = "GALLERY_CACHE"
 
 function getData(ignoreCache) {
@@ -38,7 +57,7 @@ function getData(ignoreCache) {
     return cached; 
   }
   
-  var ss = SpreadsheetApp.openByUrl('https://docs.google.com/spreadsheets/d/1kYm8Xi5NRnPaLWvPfy4ERHQyCT2iGJZbw9kyNe5aICQ/');
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName("Site Data");
   if (sheet == undefined) return JSON.stringify({"error": "not found"});
 
@@ -53,11 +72,15 @@ function getData(ignoreCache) {
 }
 
 function addData(row) {
-  var ss = SpreadsheetApp.openByUrl('https://docs.google.com/spreadsheets/d/1kYm8Xi5NRnPaLWvPfy4ERHQyCT2iGJZbw9kyNe5aICQ/');
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName("Gallery");
   if (sheet == undefined) return JSON.stringify({"error": "not found"});
   var timestamp = Utilities.formatDate(new Date(), "PST", "yyyy-MM-dd HH:mm:ss");
   row.unshift(timestamp);
+  
+  var user = getUserInfo(row[1]);
+  row.push(user.name.fullName);
+  row.push(user.thumbnailPhotoUrl);
   sheet.appendRow(row);
 }
 
@@ -69,9 +92,15 @@ function include(filename) {
   return HtmlService.createHtmlOutputFromFile(filename).getContent();
 }
 
-function getAuthorData(username) {
-  var url = "https://app.dropboxer.net/dropabout/api/dropboxer/drew@dropbox.com";
-  var response = UrlFetchApp.fetch(url, {'muteHttpExceptions': true});
-  Logger.log(response); 
-  return response;
+function getUser(email) {
+  var user = AdminDirectory.Users.get(email, {viewType:'domain_public'});
+  Logger.log(user);
+  return user;
 }
+
+//function getAuthorData(username) {
+//  var url = "https://app.dropboxer.net/dropabout/api/dropboxer/drew@dropbox.com";
+//  var response = UrlFetchApp.fetch(url, {'muteHttpExceptions': true});
+//  Logger.log(response); 
+//  return response;
+//}

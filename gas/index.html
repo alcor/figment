@@ -72,6 +72,7 @@ function clearTag() {
 
 function clearAuthor() {
   activeAuthor = null;
+  cachedUserInfo = null;
   render()
   return false;
 }
@@ -79,6 +80,7 @@ function clearAuthor() {
 function clearFilters() {
   activeTag = null;
   activeAuthor = null;
+  cachedUserInfo = null;
   render();
   return false;
 }
@@ -148,7 +150,8 @@ function render(response) {
   
   var subheader = document.createElement("div")
   if (activeAuthor) {
-    subheader.appendChild(renderAuthorHeaderTemplate())
+    subheader.appendChild(m("div", {id: "author-subheader"}))
+    fetchAuthorInfo()
   } 
   if (activeTag) {
     subheader.appendChild(renderTagHeaderTemplate())
@@ -204,18 +207,23 @@ function renderTagHeaderTemplate() {
   )
 }
 
-function renderAuthorHeaderTemplate() {
-  return m("div", {id:"subheader", className:"author"},
-      m("span", {}, "Shared by "),
-      m("span", {className: "activeAuthor"}, activeAuthor),
-      m("a", {href: "#", onclick: clearAuthor}, m("icon",{},"cancel"))
+function renderAuthorHeaderTemplate(response) {
+  avatarStyle = "background-image:url("+response.thumbnailPhotoUrl+"); background-size: cover";
+  var authorHeaderEl = m("div", {id: "author-subheader-container"},
+    m("div", {className: "avatar", style: avatarStyle}, null),
+    m("div", {className: "author-info-container"}, 
+      m("h2", {className: "username"}, activeAuthor),
+      m("span", {className: "name"}, response.name.fullName+" · "),
+      m("span", {className: "email"}, response.primaryEmail),
+    ),
+    //m("a", {href: "#", onclick: clearTag}, m("icon",{},"cancel"))
   )
+  document.getElementById("author-subheader").appendChild(authorHeaderEl);
 }
 
-// TODO: get profile and make a header out of it for "user page"
-// function updateAuthorHeaderTemplate(response) {
-//  console.log(response);
-// }
+function fetchAuthorInfo() {
+  google.script.run.withSuccessHandler(renderAuthorHeaderTemplate).getUser(activeAuthor+"@dropbox.com");
+}
 
 function submitAddForm(e) {
   var form = e.target;

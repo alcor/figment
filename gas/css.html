@@ -50,10 +50,11 @@ h1 {
 }
 
 #add {
-line-height:64px;
+  line-height:64px;
 }
 
-#subheader {
+#subheader, 
+#author-subheader {
   display:flex;
   flex-direction:row;
   flex-wrap:wrap;
@@ -63,6 +64,31 @@ line-height:64px;
   border-bottom: 1px solid rgba(0,0,0,0.1);
   padding-bottom: 1em;
   margin-bottom: 1em;
+}
+
+#author-subheader {
+  height: 66px;
+}
+
+#author-subheader-container {
+  display: flex;
+}
+
+#author-subheader-container h2 {
+  margin: .2em 0 .4em 0;
+}
+
+#author-subheader-container .email,
+#author-subheader-container .name {
+  font-size: .66em;
+  opacity: .5;
+}
+
+.avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 32px;
+  margin-right: 1em;
 }
 
 #subheader .activeAuthor,
@@ -75,26 +101,9 @@ margin-left:0.5em;
 }
 
 h2 {
-  font-weight: 400;
-}
-h2 .activeTag {
   font-weight: 700;
-}
-h2 a {
-  font-size: 1em;
-  margin-left: 1em;
 }
 
-h3 {
-  font-weight: 400;
-}
-h3 .activeTag {
-  font-weight: 700;
-}
-h3 a {
-  font-size: .75em;
-  margin-left: 1em;
-}
 
 #files {
   display:flex;
