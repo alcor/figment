@@ -1,7 +1,11 @@
 function doGet(e) {
   var template = HtmlService.createTemplateFromFile('gas/index')
+  var scriptProperties = PropertiesService.getScriptProperties();
+  template.slack_team = scriptProperties.getProperty("slack_team");
   var output = template.evaluate();
   return output
+    .setTitle("Figment")
+    //.setFaviconUrl("")
     .addMetaTag('viewport', 'width=device-width, initial-scale=1')
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
 }
@@ -73,7 +77,7 @@ function getData(ignoreCache) {
 
 function addData(row) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sheet = ss.getSheetByName("Gallery");
+  var sheet = ss.getSheetByName("Submissions");
   if (sheet == undefined) return JSON.stringify({"error": "not found"});
   var timestamp = Utilities.formatDate(new Date(), "PST", "yyyy-MM-dd HH:mm:ss");
   row.unshift(timestamp);

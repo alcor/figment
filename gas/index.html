@@ -72,7 +72,7 @@ function clearTag() {
 
 function clearAuthor() {
   activeAuthor = null;
-  cachedUserInfo = null;
+  cachedAuthor = null;
   render()
   return false;
 }
@@ -97,7 +97,6 @@ google.script.history.setChangeHandler(function (e) {
 
 function render(response) {
   if (!response) response = cachedResponse;
-  
   if (response.error) {
     alert(response.error);
     return;
@@ -150,7 +149,8 @@ function render(response) {
   
   var subheader = document.createElement("div")
   if (activeAuthor) {
-    subheader.appendChild(m("div", {id: "author-subheader"}))
+    authorSubheaderEl = m("div", {id: "author-subheader"})
+    subheader.appendChild(authorSubheaderEl)
     fetchAuthorInfo()
   } 
   if (activeTag) {
@@ -207,22 +207,34 @@ function renderTagHeaderTemplate() {
   )
 }
 
-function renderAuthorHeaderTemplate(response) {
-  avatarStyle = "background-image:url("+response.thumbnailPhotoUrl+"); background-size: cover";
-  var authorHeaderEl = m("div", {id: "author-subheader-container"},
+function renderAuthorHeaderTemplate() {
+  avatarStyle = "background-image:url("+cachedAuthor.thumbnailPhotoUrl+"); background-size: cover";
+  var authorSubheaderContentEl = m("div", {id: "author-subheader-container"},
     m("div", {className: "avatar", style: avatarStyle}, null),
     m("div", {className: "author-info-container"}, 
       m("h2", {className: "username"}, activeAuthor),
-      m("span", {className: "name"}, response.name.fullName+" · "),
-      m("span", {className: "email"}, response.primaryEmail),
+      m("span", {className: "name"}, cachedAuthor.name.fullName+" · "),
+      m("span", {className: "email"}, cachedAuthor.primaryEmail),
     ),
     //m("a", {href: "#", onclick: clearTag}, m("icon",{},"cancel"))
   )
-  document.getElementById("author-subheader").appendChild(authorHeaderEl);
+  authorSubheaderEl.appendChild(authorSubheaderContentEl);
 }
 
+var cachedAuthor;
+var authorSubheaderEl;
+
 function fetchAuthorInfo() {
-  google.script.run.withSuccessHandler(renderAuthorHeaderTemplate).getUser(activeAuthor+"@dropbox.com");
+  if (cachedAuthor) {
+    renderAuthorHeaderTemplate();
+  } else {
+    google.script.run.withSuccessHandler(handleAuthorResponse).getUser(activeAuthor+"@dropbox.com");
+  }
+}
+
+function handleAuthorResponse(response) {
+  cachedAuthor = response;
+  renderAuthorHeaderTemplate()
 }
 
 function submitAddForm(e) {
@@ -250,8 +262,11 @@ var cache = window.localStorage.getItem("pagecache");
 if (cache) document.getElementById("container").innerHTML = cache;
 
 google.script.url.getLocation(function(location) {
+  console.log(location.hash);
   activeTag = location.hash;
 });
+
+
 
 </script>
 
