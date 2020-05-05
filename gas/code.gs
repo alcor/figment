@@ -1,3 +1,5 @@
+var scriptProperties = PropertiesService.getScriptProperties();
+
 function doGet(e) {
   var template = HtmlService.createTemplateFromFile('gas/index')
   var scriptProperties = PropertiesService.getScriptProperties();
@@ -10,12 +12,35 @@ function doGet(e) {
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
 }
 
+function getUrlParameter(name, url) {
+    name = name.replace(/[\[]/, '\\[').replace(/[\]]/, '\\]');
+    var regex = new RegExp('[\\?&]' + name + '=([^&#]*)');
+    var results = regex.exec(url);
+    return results === null ? '' : decodeURIComponent(results[1].replace(/\+/g, ' '));
+};
+
+function getImage(url) {
+//  https://www.figma.com/file/:key/:title?node-id=:id.
+//https://www.figma.com/file/E85PQYzX3kBd30yr1MRSHM/Animal-Crossing-Antipodia-Map?node-id=100%3A2
+  var re = /https:\/\/([\w\.-]+\.)?figma.com\/(file|proto)\/([0-9a-zA-Z]{22,128})(?:\/.*)?$/
+  
+
+  var match = url.match(re)
+  var key = match[3];
+  var ids = getUrlParameter("node-id", url)
+  var infoUrl = "https://api.figma.com/v1/images/" + key + (ids ? "?ids=" + ids : "");
+  Logger.log(infoUrl)
+  var response = JSON.parse(UrlFetchApp.fetch(infoUrl, {headers: {"X-FIGMA-TOKEN": scriptProperties.getProperty("token")}}));
+  
+  Logger.log(response)
+  return response.images[ids]
+}
+
 function test() {
-  Logger.log(figmainfo("https://www.figma.com/file/aTdiAlDwv5wdOcLGiwKUIM/IA-Convergence-2020?node-id=335%3A152421"))
+  Logger.log(getImage("https://www.figma.com/file/aTdiAlDwv5wdOcLGiwKUIM/IA-Convergence-2020?node-id=335%3A152421"))
 }
 
 function figmainfo(url) {
-  var scriptProperties = PropertiesService.getScriptProperties();
   // curl -H 'X-FIGMA-TOKEN: <personal access token>' ''
   // GET/v1/files/:key/comments
   var re = /https:\/\/([\w\.-]+\.)?figma.com\/(file|proto)\/([0-9a-zA-Z]{22,128})(?:\/.*)?$/

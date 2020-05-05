@@ -8,9 +8,7 @@
 <link rel="stylesheet" type="text/css" href="https://dropbox-appbox-static.s3.amazonaws.com/static/binder/stylesheets/font-sharp-grotesk.css" /> 
 <?!= include('gas/css'); ?>
 </head>
-<body>
-<div id="container"><div id="nav"><h1>···</h1></div></div>
-</body>
+<body></body>
 <script>
 
 var m = function createElement(type, attrs, ...children) {
@@ -49,16 +47,33 @@ function gotData(response) {
 
 var activeTag;
 var activeAuthor;
+var activeSearch;
+
+function setSearch(value, incremental) {
+  var search = document.getElementById("search")
+  activeSearch = search.value = value || ""
+  
+  value = value.replace("#","*");
+  if (incremental) {
+    google.script.history.replace({}, undefined, value);
+  } else {
+    google.script.history.push({}, undefined, value);
+  }
+  render();
+  document.getElementById("search").focus();
+}
 
 function filterByTag(tag) {
-  google.script.history.push({}, undefined, tag);
-  activeTag = tag;
+  //google.script.history.push({}, undefined, tag);
+  setSearch("#" + tag)
+  //activeTag = tag;
   render();
   return false;
 }
 
 function filterByAuthor(username) {
-  activeAuthor = username;
+  //activeAuthor = username;
+  setSearch("@" + username)
   render();
   return false;
 }
@@ -87,13 +102,51 @@ function clearFilters() {
 
 google.script.history.setChangeHandler(function (e) {
   var hash = e.location.hash;
-  console.log(e.location.hash);
-  if (hash.length) {
-    filterByTag(hash)
-  } else {
-    clearFilters()
-  }
+  setSearch(hash)
 });
+
+function searchChanged(e) {
+console.log("e", e, e.target.value);
+setSearch(e.target.value, true);
+}
+
+function setup() {
+  var addSheet = m("div", {className: "add-sheet"},
+    m("form", {onsubmit:submitAddForm}, 
+      m("label", {for:"url", type:"text"}, "Figma URL"),
+      m("input", {id:"url", type:"text", autocomplete:"off", placeholder:"https://figma.com/...."}),
+      m("caption",{}, "set a custom thumbnail first. 2:1 ratio is preferred"),
+      m("label", {for:"desc", type:"text"}, "Description"),
+      m("input", {id:"desc", type:"text", autocomplete:"off", placeholder:"Tell us about it..."}),
+      m("label", {for:"email", type:"text"}, "Email"),
+      m("input", {id:"email", type:"text", autocomplete:"on", placeholder:"example@dropbox.com", value: window.localStorage.getItem("email") || ""}),
+      m("label", {for:"tags", type:"text"}, "Tags"),
+      m("input", {id:"tags", type:"text", autocomplete:"on", placeholder:"onboarding, exploration"}),
+      m("button", {type:"submit", id:"add-button"}, "Add")
+      )
+  )
+
+  var nav = m("div", {id:"nav"}, 
+      m("h1", {},
+      m("div", {id:"logo", onclick:e => setSearch("")}),
+          m("input", {id:"search", size:30, type:"search", autocomplete:"off", value:activeSearch || "", placeholder:"Figment · Dropbox Design", oninput:searchChanged})),
+      m("div", {id:"toolbar"}, 
+        m("div", {id:"add",onclick: () => {document.body.classList.toggle("add")}, target:"_blank"},
+          m("icon",{},"add"),""),
+        addSheet
+      )
+    )   
+    
+    
+    var container = m("div", {id:"container"});
+
+    var cache = window.localStorage.getItem("pagecache");
+    if (cache) container.innerHTML = cache;
+
+    document.body.appendChild(nav);
+    document.body.appendChild(container);
+    document.getElementById("search").focus();
+}
 
 function render(response) {
   if (!response) response = cachedResponse;
@@ -102,17 +155,49 @@ function render(response) {
     return;
   }
  
-
   var container = document.getElementById("container");
-  if (container) container.parentElement.removeChild(container);
+  while (container.firstChild) container.removeChild(container.lastChild);
   
   var thumbnails = []
   
   var data = response.data;
   
-  if (activeTag) data = data.filter(item => item[4].includes(activeTag))
-  if (activeAuthor) data = data.filter(item => item[1].includes(activeAuthor)); 
   
+  if (activeSearch) {
+    var tags = [];
+    var people = [];
+    var terms = [];
+    var components = activeSearch.split(" ")
+    components.forEach(c => {
+      if (c.startsWith("#")) {
+        tags.push(c.substring(1)); 
+      } else if (c.startsWith("@")) {
+        people.push(c.substring(1));
+      } else {
+        terms.push(c)
+      }
+    });
+
+    tags.forEach(t => {
+      data = data.filter(item => item[4].includes(t))
+    })
+    
+    people.forEach(p => {
+      data = data.filter(item => item[1].includes(p));
+    })
+    
+    terms.forEach(t => {
+      data = data.filter(item => item[3].includes(t) || item[5].includes(t) || item[1].includes(t) || item[4].includes(t));
+    })
+    
+    activeAuthor = people.shift();
+  
+  } else {
+    if (activeTag) data = data.filter(item => item[4].includes(activeTag))
+    if (activeAuthor) data = data.filter(item => item[1].includes(activeAuthor)); 
+  }
+ 
+ 
   data.forEach(function(row) {
     var url = row[2]
     if (!url) return;
@@ -121,7 +206,7 @@ function render(response) {
     var description = row[3]
     var tags = row[4]
     var title = row[5]
-    var thumbnail = row[6]
+    var thumbnail = row[8]
     var modified = row[7]
   
     var tagEls = [];
@@ -147,42 +232,18 @@ function render(response) {
     ));
   });
   
-  var subheader = document.createElement("div")
+  var subheader = m("div")
   if (activeAuthor) {
     authorSubheaderEl = m("div", {id: "author-subheader"})
     subheader.appendChild(authorSubheaderEl)
     fetchAuthorInfo()
   } 
+  
   if (activeTag) {
     subheader.appendChild(renderTagHeaderTemplate())
   }
 
-  var addSheet = m("div", {className: "add-sheet"},
-    m("form", {onsubmit:submitAddForm}, 
-      m("label", {for:"url", type:"text"}, "Figma URL"),
-      m("input", {id:"url", type:"text", autocomplete:"off", placeholder:"https://figma.com/...."}),
-      m("caption",{}, "set a custom thumbnail first. 2:1 ratio is preferred"),
-      m("label", {for:"desc", type:"text"}, "Description"),
-      m("input", {id:"desc", type:"text", autocomplete:"off", placeholder:"Tell us about it..."}),
-      m("label", {for:"email", type:"text"}, "Email"),
-      m("input", {id:"email", type:"text", autocomplete:"on", placeholder:"example@dropbox.com", value: window.localStorage.getItem("email") || ""}),
-      m("label", {for:"tags", type:"text"}, "Tags"),
-      m("input", {id:"tags", type:"text", autocomplete:"on", placeholder:"onboarding, exploration"}),
-      m("button", {type:"submit", id:"add-button"}, "Add")
-      )
-  )
-  
-  container = m("div", {id:"container"},
-    m("div", {id:"nav"}, 
-      m("h1", {},
-      m("div", {id:"logo"}),
-      "Figment · Dropbox Design"),
-      m("div", {id:"toolbar"}, 
-        m("div", {id:"add",onclick: () => {document.body.classList.toggle("add")}, target:"_blank"},
-          m("icon",{},"add"),""),
-        addSheet
-      )
-    ),
+  var content = m("div", {id:"content"},    
     subheader,
     m("div", {id:"files"},
     thumbnails,
@@ -194,10 +255,9 @@ function render(response) {
     m("div", {className:"flex-spacer"})
     )
   )
-  document.body.appendChild(container);
+  container.appendChild(content);
   window.localStorage.setItem("pagecache", container.innerHTML)
 }
-fetch();
 
 function renderTagHeaderTemplate() {
   return m("div", {id:"subheader"},
@@ -218,6 +278,7 @@ function renderAuthorHeaderTemplate() {
     ),
     //m("a", {href: "#", onclick: clearTag}, m("icon",{},"cancel"))
   )
+   while (authorSubheaderEl.firstChild) authorSubheaderEl.removeChild(authorSubheaderEl.lastChild);
   authorSubheaderEl.appendChild(authorSubheaderContentEl);
 }
 
@@ -257,16 +318,17 @@ function submitAddForm(e) {
   return false;
 }
 
-
-var cache = window.localStorage.getItem("pagecache");
-if (cache) document.getElementById("container").innerHTML = cache;
-
 google.script.url.getLocation(function(location) {
   console.log(location.hash);
-  activeTag = location.hash;
+  activeSearch = location.hash.replace("*", "#");
+  setup()
 });
 
+fetch();
 
+function search(e) {
+  
+}
 
 </script>
 
