@@ -44,8 +44,8 @@ function getFigmaFramePreview(url) {
   return response.images[ids]
 }
 
-function test() {
-  Logger.log(getImage("https://www.figma.com/file/aTdiAlDwv5wdOcLGiwKUIM/IA-Convergence-2020?node-id=335%3A152421"))
+function testFramePreview() {
+  Logger.log(getFigmaFramePreview("https://www.figma.com/file/aTdiAlDwv5wdOcLGiwKUIM/IA-Convergence-2020?node-id=335%3A152421"))
 }
 
 function getFigmaInfo(url) {
@@ -88,13 +88,20 @@ function getUserInfo(email) {
 
 var GALLERY_CACHE = "GALLERY_CACHE"
 
+function getSpreadsheet() {
+var url = scriptProperties.getProperty("sheet_url");
+if (url) return SpreadsheetApp.openByUrl(url);
+return SpreadsheetApp.getActiveSpreadsheet();
+}
+
+
 function getData(ignoreCache) {
   var cache = CacheService.getScriptCache();
   if (!ignoreCache && (cached = cache.get(GALLERY_CACHE)) != null) {    
     return cached; 
   }
   
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var ss = getSheet();
   var sheet = ss.getSheets()[0];
   if (sheet == undefined) return JSON.stringify({"error": "not found"});
 
