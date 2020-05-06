@@ -101,7 +101,7 @@ function getData(ignoreCache) {
     return cached; 
   }
   
-  var ss = getSheet();
+  var ss = getSpreadsheet();
   var sheet = ss.getSheets()[0];
   if (sheet == undefined) return JSON.stringify({"error": "not found"});
 
