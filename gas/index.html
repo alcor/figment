@@ -43,6 +43,7 @@ function gotData(response) {
   cachedResponse.data.shift();
   document.body.classList.remove("loading");
   render(cachedResponse);
+  document.getElementById("search").focus();
 }
 
 var activeTag;
@@ -145,7 +146,6 @@ function setup() {
 
     document.body.appendChild(nav);
     document.body.appendChild(container);
-    document.getElementById("search").focus();
 }
 
 function render(response) {

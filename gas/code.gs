@@ -1,13 +1,25 @@
 var scriptProperties = PropertiesService.getScriptProperties();
 
 function doGet(e) {
-  var template = HtmlService.createTemplateFromFile('gas/index')
-  var scriptProperties = PropertiesService.getScriptProperties();
-  template.slack_team = scriptProperties.getProperty("slack_team");
-  var output = template.evaluate();
+  var parameters = e.parameters;
+  var output;
+  if (parameters.preview) {
+    var template = HtmlService.createTemplateFromFile('gas/preview')
+    var scriptProperties = PropertiesService.getScriptProperties();
+    template.url = parameters.preview[0];
+    template.info = getFigmaInfo(parameters.preview[0]);
+    output = template.evaluate();
+  
+  } else {
+    var template = HtmlService.createTemplateFromFile('gas/index')
+    var scriptProperties = PropertiesService.getScriptProperties();
+    template.slack_team = scriptProperties.getProperty("slack_team");
+    output = template.evaluate();
+  
+  }
+  
   return output
     .setTitle("Figment")
-    //.setFaviconUrl("")
     .addMetaTag('viewport', 'width=device-width, initial-scale=1')
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
 }
@@ -19,19 +31,15 @@ function getUrlParameter(name, url) {
     return results === null ? '' : decodeURIComponent(results[1].replace(/\+/g, ' '));
 };
 
-function getImage(url) {
-//  https://www.figma.com/file/:key/:title?node-id=:id.
-//https://www.figma.com/file/E85PQYzX3kBd30yr1MRSHM/Animal-Crossing-Antipodia-Map?node-id=100%3A2
+function getFigmaFramePreview(url) {
   var re = /https:\/\/([\w\.-]+\.)?figma.com\/(file|proto)\/([0-9a-zA-Z]{22,128})(?:\/.*)?$/
-  
-
   var match = url.match(re)
   var key = match[3];
   var ids = getUrlParameter("node-id", url)
   var infoUrl = "https://api.figma.com/v1/images/" + key + (ids ? "?ids=" + ids : "");
   Logger.log(infoUrl)
-  var response = JSON.parse(UrlFetchApp.fetch(infoUrl, {headers: {"X-FIGMA-TOKEN": scriptProperties.getProperty("token")}}));
-  
+  var response = JSON.parse(UrlFetchApp.fetch(infoUrl, {headers: {"X-FIGMA-TOKEN": scriptProperties.getProperty("figma_token")}}));
+
   Logger.log(response)
   return response.images[ids]
 }
@@ -40,7 +48,7 @@ function test() {
   Logger.log(getImage("https://www.figma.com/file/aTdiAlDwv5wdOcLGiwKUIM/IA-Convergence-2020?node-id=335%3A152421"))
 }
 
-function figmainfo(url) {
+function getFigmaInfo(url) {
   // curl -H 'X-FIGMA-TOKEN: <personal access token>' ''
   // GET/v1/files/:key/comments
   var re = /https:\/\/([\w\.-]+\.)?figma.com\/(file|proto)\/([0-9a-zA-Z]{22,128})(?:\/.*)?$/
@@ -52,11 +60,11 @@ function figmainfo(url) {
   var id = undefined;
   var infoUrl = "https://api.figma.com/v1/files/" + key + "?depth=1";
   Logger.log(infoUrl);
-  var response = UrlFetchApp.fetch(infoUrl, {headers: {"X-FIGMA-TOKEN": scriptProperties.getProperty("token")}});
+  var response = UrlFetchApp.fetch(infoUrl, {headers: {"X-FIGMA-TOKEN": scriptProperties.getProperty("figma_token")}});
   var json = response.getContentText();
   var data = JSON.parse(json);
-  var array = [[data.name, data.thumbnailUrl, data.lastModified]]
-  return array;  
+  
+  return data;
 }
 
 function testweb() {
@@ -102,12 +110,19 @@ function getData(ignoreCache) {
 
 function addData(row) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sheet = ss.getSheetByName("Submissions");
+  var sheet = ss.getSheetByName("Figment");
   if (sheet == undefined) return JSON.stringify({"error": "not found"});
   var timestamp = Utilities.formatDate(new Date(), "PST", "yyyy-MM-dd HH:mm:ss");
-  row.unshift(timestamp);
   
-  var user = getUserInfo(row[1]);
+  var email = row[0];
+  var url = row[1];
+  row.unshift(timestamp);  
+  
+  var info = getFigmaInfo(url);
+  row.push(info.name, info.thumbnailUrl, info.lastModified)
+  
+  row.push(getFigmaFramePreview(url));
+  var user = getUserInfo(email);
   row.push(user.name.fullName);
   row.push(user.thumbnailPhotoUrl);
   sheet.appendRow(row);
