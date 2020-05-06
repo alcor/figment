@@ -95,7 +95,7 @@ function getData(ignoreCache) {
   }
   
   var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sheet = ss.getSheetByName("Site Data");
+  var sheet = ss.getSheetByName("Figment");
   if (sheet == undefined) return JSON.stringify({"error": "not found"});
 
   var galleryData = sheet.getDataRange().getValues();
