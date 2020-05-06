@@ -95,7 +95,7 @@ function getData(ignoreCache) {
   }
   
   var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sheet = ss.getSheetByName("Figment");
+  var sheet = ss.getSheets()[0];
   if (sheet == undefined) return JSON.stringify({"error": "not found"});
 
   var galleryData = sheet.getDataRange().getValues();
@@ -110,7 +110,7 @@ function getData(ignoreCache) {
 
 function addData(row) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sheet = ss.getSheetByName("Figment");
+  var sheet = ss.getSheets()[0];
   if (sheet == undefined) return JSON.stringify({"error": "not found"});
   var timestamp = Utilities.formatDate(new Date(), "PST", "yyyy-MM-dd HH:mm:ss");
   
