@@ -66,6 +66,10 @@ function getFigmaInfo(url) {
   
   return data;
 }
+function FIGINFO(url) {
+var info = getFigmaInfo(url);
+return [[info.name, info.thumbnailUrl, info.lastModified]];
+}
 
 function testweb() {
   webinfo("https://www.figma.com/file/aTdiAlDwv5wdOcLGiwKUIM/IA-Convergence-2020?node-id=1878%3A64885");
@@ -153,10 +157,3 @@ function getUser(email) {
   Logger.log(user);
   return user;
 }
-
-//function getAuthorData(username) {
-//  var url = "https://app.dropboxer.net/dropabout/api/dropboxer/drew@dropbox.com";
-//  var response = UrlFetchApp.fetch(url, {'muteHttpExceptions': true});
-//  Logger.log(response); 
-//  return response;
-//}
