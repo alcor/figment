@@ -206,7 +206,7 @@ function render(response) {
     var description = row[3]
     var tags = row[4]
     var title = row[5]
-    var thumbnail = row[8]
+    var thumbnail = row[8] || row[6]
     var modified = row[7]
   
     var tagEls = [];
