@@ -148,6 +148,7 @@ function include(filename) {
 }
 
 function getUser(email) {
+  email = email + scriptProperties.getProperty("domain");
   var user = AdminDirectory.Users.get(email, {viewType:'domain_public'});
   Logger.log(user);
   return user;

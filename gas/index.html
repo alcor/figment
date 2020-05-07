@@ -120,7 +120,7 @@ function setup() {
       m("label", {for:"desc", type:"text"}, "Description"),
       m("input", {id:"desc", type:"text", autocomplete:"off", placeholder:"Tell us about it..."}),
       m("label", {for:"email", type:"text"}, "Email"),
-      m("input", {id:"email", type:"text", autocomplete:"on", placeholder:"example@dropbox.com", value: window.localStorage.getItem("email") || ""}),
+      m("input", {id:"email", type:"text", autocomplete:"on", placeholder:"name@example.com", value: window.localStorage.getItem("email") || ""}),
       m("label", {for:"tags", type:"text"}, "Tags"),
       m("input", {id:"tags", type:"text", autocomplete:"on", placeholder:"onboarding, exploration"}),
       m("button", {type:"submit", id:"add-button"}, "Add")
@@ -130,7 +130,7 @@ function setup() {
   var nav = m("div", {id:"nav"}, 
       m("h1", {},
       m("div", {id:"logo", onclick:e => setSearch("")}),
-          m("input", {id:"search", size:30, type:"search", autocomplete:"off", value:activeSearch || "", placeholder:"Figment · Dropbox Design", oninput:searchChanged})),
+          m("input", {id:"search", size:30, type:"search", autocomplete:"off", value:activeSearch || "", placeholder:"Figment", oninput:searchChanged})),
       m("div", {id:"toolbar"}, 
         m("div", {id:"add",onclick: () => {document.body.classList.toggle("add")}, target:"_blank"},
           m("icon",{},"add"),""),
@@ -289,7 +289,7 @@ function fetchAuthorInfo() {
   if (cachedAuthor) {
     renderAuthorHeaderTemplate();
   } else {
-    google.script.run.withSuccessHandler(handleAuthorResponse).getUser(activeAuthor+"@dropbox.com");
+    google.script.run.withSuccessHandler(handleAuthorResponse).getUser(activeAuthor);
   }
 }
 
