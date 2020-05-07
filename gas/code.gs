@@ -7,7 +7,7 @@ function doGet(e) {
     var template = HtmlService.createTemplateFromFile('gas/preview')
     var scriptProperties = PropertiesService.getScriptProperties();
     template.url = parameters.preview[0];
-    template.info = getFigmaInfo(parameters.preview[0]);
+    template.thumbnailUrl = getFigmaInfo(parameters.preview[0]).thumbnailUrl;
     output = template.evaluate();
   
   } else {
@@ -77,7 +77,7 @@ function webinfo(url) {
 
 
 function testuser() {
-  Logger.log(getUserInfo(""));
+  Logger.log(getUserInfo("jnasrallah@atlassian.com"));
 }
 
 function getUserInfo(email) {
