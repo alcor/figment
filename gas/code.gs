@@ -77,7 +77,7 @@ function webinfo(url) {
 
 
 function testuser() {
-  Logger.log(getUserInfo("nj@dropbox.com"));
+  Logger.log(getUserInfo(""));
 }
 
 function getUserInfo(email) {
@@ -116,7 +116,7 @@ function getData(ignoreCache) {
 }
 
 function addData(row) {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var ss = getSpreadsheet();
   var sheet = ss.getSheets()[0];
   if (sheet == undefined) return JSON.stringify({"error": "not found"});
   var timestamp = Utilities.formatDate(new Date(), "PST", "yyyy-MM-dd HH:mm:ss");
@@ -128,7 +128,11 @@ function addData(row) {
   var info = getFigmaInfo(url);
   row.push(info.name, info.thumbnailUrl, info.lastModified)
   
+  try {
   row.push(getFigmaFramePreview(url));
+  } catch(e) {
+  row.push("");
+  }
   var user = getUserInfo(email);
   row.push(user.name.fullName);
   row.push(user.thumbnailPhotoUrl);
