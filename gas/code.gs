@@ -72,7 +72,7 @@ return [[info.name, info.thumbnailUrl, info.lastModified]];
 }
 
 function testweb() {
-  webinfo("https://www.figma.com/file/aTdiAlDwv5wdOcLGiwKUIM/IA-Convergence-2020?node-id=1878%3A64885");
+  webinfo("");
 }
 
 function webinfo(url) {
@@ -81,7 +81,7 @@ function webinfo(url) {
 
 
 function testuser() {
-  Logger.log(getUserInfo("jnasrallah@atlassian.com"));
+  Logger.log(getUserInfo(""));
 }
 
 function getUserInfo(email) {
