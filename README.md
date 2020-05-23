@@ -11,8 +11,8 @@ Basic Figma sharing and awareness
 - In the script editor, add the following Keys under  File > Project properties > script properties
   - figma_token - your personal key for figma
   - domain - example.com
-  - slack_team - The slack team id
-  - sheet_url - the url for the spreadsheet you just created
+  - slack_team - The slack team id (optional)
+  - sheet_url - the url for the spreadsheet you just created (optional, only if it does not work without it)
 
 ### Granting permission to look up names and photos for authors
 - Resources > Advanced Google services
