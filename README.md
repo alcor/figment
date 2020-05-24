@@ -4,12 +4,12 @@ Figment lets folks on your team share figma files with basic search, tags, and m
 ## Initial Setup
 
 ### Creating the sheet
-- Create a copy of the Figment Master Sheet - https://docs.google.com/spreadsheets/d/1DGcuIwNQIi2kulaafiv-73OwpkgvsKvrXTv5H4Nm624/copy
+- Create a copy of the [Figment Master Sheet](https://docs.google.com/spreadsheets/d/1DGcuIwNQIi2kulaafiv-73OwpkgvsKvrXTv5H4Nm624/copy)
 - Open the script editor via Tools > Script Editor   
 
 ### Setting Properties
 - In the script editor, add the following Keys under  File > Project properties > script properties
-  - figma_token - your personal key for figma
+  - figma_token - your "Personal Access Token" for Figma, which can be generated from the Settings section of Figma 
   - domain - example.com
   - slack_team - The slack team id (optional)
   - sheet_url - the url for the spreadsheet you just created (optional, only if it does not work without it)
@@ -22,7 +22,9 @@ Figment lets folks on your team share figma files with basic search, tags, and m
 ### Deploying
 - Hit Publish > Deploy as web app
   - Execute the app "as Me"
-- Authorize
+  - Give access to "Only myself"
+- Update
+- Approve any permissions dialogs which may appear
 
 
 
