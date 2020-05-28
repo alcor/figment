@@ -5,7 +5,7 @@
 <base target="_top">
 <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
-<?!= include('gas/css'); ?>
+<?!= include_('gas/css'); ?>
 </head>
 <body></body>
 <script>
@@ -37,23 +37,48 @@ function fetch() {
   google.script.run.withSuccessHandler(gotData).getData(ignoreCache);
 }
 
+
+var tagSplitRE = / ?(?:,|\[|\]| - ) ?/
+function updateSearchIndex() {
+ cachedResponse.data.forEach(row => {
+ var tags = row[4] + ", " + row[5]
+ tags = tags.split(tagSplitRE);
+    
+    
+  var terms = [row[1], "#" + tags.join(" #"), "@" + row[9]]
+  row.index = terms.join("\n").toLowerCase();
+  console.log(row);
+  });
+}
+
 function gotData(response) {
   cachedResponse = JSON.parse(response);
-  cachedResponse.data.shift();
+  updateSearchIndex();
+  var headers = cachedResponse.data.shift();
+  var header = headers.reduce((a,b,i) => (a[b]=Math.floor(i),a),{});
+  cachedResponse.header = header;
   document.body.classList.remove("loading");
+  getUniqueAuthors(cachedResponse);
   render(cachedResponse);
   document.getElementById("search").focus();
 }
 
+function getUniqueAuthors(response) {
+  var authors = response.data.map(item => item[9])
+  allUniqueAuthors = authors.filter((value, index, self) => self.indexOf(value) === index)
+}
+
 var activeTag;
 var activeAuthor;
+var allUniqueAuthors = [];
 var activeSearch;
 
 function setSearch(value, incremental) {
   var search = document.getElementById("search")
   activeSearch = search.value = value || ""
+  if (activeSearch === "") clearFilters()
   
-  value = value.replace("#","*");
+  value = value.replace("#","//");
   if (incremental) {
     google.script.history.replace({}, undefined, value);
   } else {
@@ -72,7 +97,6 @@ function filterByTag(tag) {
 }
 
 function filterByAuthor(username) {
-  //activeAuthor = username;
   setSearch("@" + username)
   render();
   return false;
@@ -96,6 +120,7 @@ function clearFilters() {
   activeTag = null;
   activeAuthor = null;
   cachedUserInfo = null;
+  cachedAuthor = null;
   render();
   return false;
 }
@@ -106,8 +131,8 @@ google.script.history.setChangeHandler(function (e) {
 });
 
 function searchChanged(e) {
-console.log("e", e, e.target.value);
-setSearch(e.target.value, true);
+  // console.log("e", e, e.target.value, e.target.data);
+  setSearch(e.target.value, true);
 }
 
 function setup() {
@@ -129,11 +154,11 @@ function setup() {
   var nav = m("div", {id:"nav"}, 
       m("h1", {},
       m("div", {id:"logo", onclick:e => setSearch("")}),
-          m("input", {id:"search", size:30, type:"search", autocomplete:"off", value:activeSearch || "", placeholder:"Figment", oninput:searchChanged})),
+          m("input", {id:"search", size:30, type:"search", autocomplete:"off", value:activeSearch || "", placeholder:"figment", oninput:searchChanged})),
       m("div", {id:"toolbar"}, 
-        m("div", {id:"add",onclick: () => {document.body.classList.toggle("add")}, target:"_blank"},
+        /*m("div", {id:"add",onclick: () => {document.body.classList.toggle("add")}, target:"_blank"},
           m("icon",{},"add"),""),
-        addSheet
+        addSheet*/
       )
     )   
     
@@ -145,6 +170,36 @@ function setup() {
 
     document.body.appendChild(nav);
     document.body.appendChild(container);
+}
+
+function shortDate(date) {
+   var monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+   return monthNames[date.getMonth()] + " " + date.getDate()
+}
+
+function relativeDate(timestamp) {
+  // Make a fuzzy time
+  var midnight = new Date();
+  midnight.setHours(0,0,0,0); // last midnight
+
+  var delta = Math.round((+new Date - timestamp) / 1000);
+  var date = new Date(timestamp)
+  var minute = 60,
+      hour = minute * 60,
+      day = hour * 24,
+      week = day * 7;
+
+  var fuzzy;
+
+  if (delta < 2 * minute) {
+    fuzzy = 'just now';
+  } else if (date > midnight) {
+    fuzzy = date.toLocaleTimeString(navigator.language, {hour: '2-digit', minute:'2-digit'});
+
+  } else {
+    fuzzy = shortDate(date)
+  }
+  return fuzzy;
 }
 
 function render(response) {
@@ -160,73 +215,74 @@ function render(response) {
   var thumbnails = []
   
   var data = response.data;
-  
-  
+
   if (activeSearch) {
     var tags = [];
     var people = [];
     var terms = [];
-    var components = activeSearch.split(" ")
+    var components = activeSearch.toLowerCase().split(" ")
     components.forEach(c => {
-      if (c.startsWith("#")) {
-        tags.push(c.substring(1)); 
-      } else if (c.startsWith("@")) {
-        people.push(c.substring(1));
-      } else {
-        terms.push(c)
-      }
+      data = data.filter(item => item.index.includes(c));
     });
-
-    tags.forEach(t => {
-      data = data.filter(item => item[4].includes(t))
-    })
     
-    people.forEach(p => {
-      data = data.filter(item => item[1].includes(p));
-    })
-    
-    terms.forEach(t => {
-      data = data.filter(item => item[3].includes(t) || item[5].includes(t) || item[1].includes(t) || item[4].includes(t));
-    })
-    
-    activeAuthor = people.shift();
+    //activeAuthor = people.shift();
   
-  } else {
-    if (activeTag) data = data.filter(item => item[4].includes(activeTag))
-    if (activeAuthor) data = data.filter(item => item[1].includes(activeAuthor)); 
   }
- 
- 
+  
+
   data.forEach(function(row) {
-    var url = row[2]
+    var url = row[0]
     if (!url) return;
-    var ts = row[0]
-    var author = row[1].split("@").shift()
-    var description = row[3]
-    var tags = row[4]
-    var title = row[5]
-    var thumbnail = row[8] || row[6]
-    var modified = row[7]
+    url = "https://www.figma.com/file/" + url;
+    
+    var title = row[1]
+    var ts = row[2]
+    var thumbnail = row[3]
+    var tags = row[4] + ", " + row[5]
+
+    tags = tags.split(tagSplitRE);
+    
+    var bgcolor = row[7];
+    if (bgcolor == "rgba(229,229,229,1)") bgcolor = undefined;
+    //var thumbnail2 = row[8]
+    var author = row[9];
+    var authorimg = row[10]; //row[1].split("@").shift()
+    var description = ""; //row[3]
+    var modified = new Date(row[2]);
   
+    authorimg = authorimg.replace(/default=.*/, "default=blank");
     var tagEls = [];
-    tags = tags.split(",");
+
     tags.forEach(tag => {
-    tag = tag.trim();
-    if (tag.length > 0) {
-      var tagEl = m("a", {className: "tag", href: "#", onclick: () => { return filterByTag(tag)}}, tag)
-      tagEls.push(tagEl);
-      }
-    });
+      if (!tag.length) return;
+      tag = tag.trim();
+      var hashtag = tag // .replace(/\s/g,"")
+      if (tag.length > 0) {
+        var tagEl = m("span", {className: "tag", onclick: () => { return filterByTag(hashtag)}}, tag)
+        tagEls.push(tagEl);
+        }
+      });
   
-    var authorEl = m("a", {className:"author", href: "#", onclick: () => { return filterByAuthor(author) }}, "—" + author)
+
     
     var nativeURL = url.replace("https://www.figma.com/", "figma://");
     thumbnails.push(m("div", {className: "file", href:url}, 
-      m("a", {href:url, target:"_blank"}, m("div", {className:"thumbnail", style:"background-image:url('" + thumbnail + "')"})),
+      m("a", {href:url, target:"_blank"},
+        m("div", {className:"thumbnail-container", style:bgcolor ? "background-color:" + bgcolor : ""},
+          m("div", {className:"thumbnail", style:"background-image:url('" + thumbnail + "')"}),
+          //m("div", {className:"thumbnail alt", style:"background-image:url('" + thumbnail2 + "')"})
+          )
+        ),
       m("div", {className:"info"},
+        m("div", {className:"avatar", style:"background-image:url('" + authorimg + "')"}),
         m("div", {className:"title"}, m("a", {href:url}, title)),
-        m("span", {className:"description"}, description ? description + " " : ""),
-        authorEl, m("br"), tagEls
+        m("span", {className:"byline"}, 
+          m("span", {className:"date"}, modified ? relativeDate(modified): ""),
+          " by ",
+          m("span", {className:"author", onclick: () => { return filterByAuthor(author) }}, author)
+        ),
+        //m("span", {className:"description"}, description ? description + " " : ""),
+        m("br"), tagEls
       )
     ));
   });
@@ -278,18 +334,20 @@ function renderAuthorHeaderTemplate() {
     //m("a", {href: "#", onclick: clearTag}, m("icon",{},"cancel"))
   )
    while (authorSubheaderEl.firstChild) authorSubheaderEl.removeChild(authorSubheaderEl.lastChild);
-  authorSubheaderEl.appendChild(authorSubheaderContentEl);
-}
+   authorSubheaderEl.appendChild(authorSubheaderContentEl);
+ }
 
 var cachedAuthor;
 var authorSubheaderEl;
 
 function fetchAuthorInfo() {
   if (cachedAuthor) {
-    renderAuthorHeaderTemplate();
-  } else {
-    google.script.run.withSuccessHandler(handleAuthorResponse).getUser(activeAuthor);
+    if (cachedAuthor.primaryEmail === activeAuthor+"@dropbox.com") {
+      renderAuthorHeaderTemplate();
+      return
+    }
   }
+  google.script.run.withSuccessHandler(handleAuthorResponse).getUser(activeAuthor);
 }
 
 function handleAuthorResponse(response) {
@@ -319,7 +377,7 @@ function submitAddForm(e) {
 
 google.script.url.getLocation(function(location) {
   console.log(location.hash);
-  activeSearch = location.hash.replace("*", "#");
+  activeSearch = location.hash.replace("//", "#");
   setup()
 });
 

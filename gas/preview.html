@@ -3,10 +3,25 @@
   <head>
     <base target="_top">
   </head>
-  <body>
-    <a href="<?=url?>">
-    <img src="<?=thumbnailUrl?>" />
-    </a>
+  <style>
+  body {
+    background-color:#eee;
+    margin:0;
+  }
+  a#preview {
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    height:100vh;
+    width:100vw;
+    background-image:url(<?=thumbnailUrl?>);
+    background-position:center;
+    background-repeat: no-repeat;
+    background-size:contain;
+  }
+  </style>
+  <body bgcolor="#fafafa">
+    <a id="preview" href="<?=url?>"></a>
   </body>
 </html>
 

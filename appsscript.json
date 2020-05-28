@@ -5,6 +5,11 @@
       "userSymbol": "AdminDirectory",
       "serviceId": "admin",
       "version": "directory_v1"
+    }],
+    "libraries": [{
+      "userSymbol": "Moment",
+      "libraryId": "15hgNOjKHUG4UtyZl9clqBbl23sDvWMS8pfDJOyIapZk5RBqwL3i-rlCo",
+      "version": "9"
     }]
   },
   "webapp": {

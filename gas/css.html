@@ -10,7 +10,7 @@ text-decoration:none;
 }
 
 body {
-  background-color: #fafafa;
+  background-color: #f1f1f1;
   xfont-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
   font-size:14px;
   line-height:140%;
@@ -18,7 +18,7 @@ body {
 }
 
 body, a {
-  color:#111;
+  color:black;
 }
 
 h1 {
@@ -31,11 +31,17 @@ h1 {
   font-size:24px;
   background:transparent;
   border:none;
+  padding-left:0;
 }
+
 #search:focus {
   outline: none;
-  border-bottom: 2px solid black;
+  border-bottom: 2px solid currentColor;
   background-color: transparent;
+}
+
+#search::placeholder {
+  opacity:0.4;
 }
 
 #logo {
@@ -96,10 +102,12 @@ h1 {
 }
 
 .avatar {
-  width: 64px;
-  height: 64px;
+  width: 48px;
+  height: 48px;
+  background-size:cover;
   border-radius: 32px;
-  margin-right: 1em;
+  float:right;
+  margin-right: 0;
 }
 
 #subheader .activeAuthor,
@@ -122,26 +130,43 @@ h2 {
   flex-wrap:wrap;
   justify-content:space-between;
   margin: 0 8vw;
+  
+    padding: 0 1em 1em;
+    display: -ms-grid;
+    display: grid;
+    grid-template-columns: repeat(auto-fill,minmax(300px,1fr));
+    grid-gap: 2em 2em;
 }
 
+
+
 .file, .flex-spacer {
-  min-width:300px;
-  max-width:500px;
+  xmax-width:500px;
   flex: 1 0 auto;
   flex-basis:300px;
   padding: 0em;
-  margin: 1em;
+  xmargin: 1em;
+  }
+  
+  .file .thumbnail-container {
+  background-color:rgb(229,229,229);
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.08), inset 0 2px 4px rgba(0,0,0,0.12);;
+  border-radius:2px;
+  display:flex;
+  overflow:hidden;
   }
   
 .file .thumbnail {
-  padding-top:50%;
-  background-size:cover;
-  background-position:top left;
-  background-color:#2d2d2d;
-  margin-bottom:1em;
-  box-shadow: inset 0 1px 3px rgba(0,0,0,0.08), inset 0 2px 4px rgba(0,0,0,0.12);;
-  border-radius:2px;
+  margin:3%;
+  padding-top:61.8%;
+  width:94%;
+  background-size:contain;
+  background-position:center center ;
+  background-repeat:no-repeat;
   transition: transform 0.1s ease-out;
+    flex: 1 0 auto;
+    background-repeat: no-repeat;
+    box-sizing:border-box;
 }
 
 .file:hover .thumbnail {
@@ -152,7 +177,7 @@ h2 {
 .file .title {
   font-weight:400;
   font-size:larger;
-  margin-bottom:.4em;
+  margin-bottom:.1em;
 }
 
 .file .info {
@@ -162,31 +187,46 @@ margin:1em 0 ;
 
 .file .description, 
 .file .author,
+.file .byline,
 .file .tag {
-  font-size:small;
+  font-size:11px;
   font-weight:500;
   line-height:115%
 }
 
 
 .file .tag {
-  background:#eee;
+  background:rgba(0,0,0,0.1);
+  opacity:0.75;
   border-radius:1px;
   padding:0 0.5em;
-  font-size:8px;
+  font-size:9px;
   text-transform:uppercase;
   letter-spacing:1px;
   margin-right: 1em;
+  cursor:default;
 }
+.file .tag:hover {
+  background:rgba(0,0,0,0.2);
+
+   opacity:1.0;
+}
+
 
 .file .description {
   font-style:oblique; 
 }
 
-.file .author {
+.file .byline {
   opacity: 0.5;
   display: inline-block;
+  cursor:default;
 }
+
+.file .author:hover {
+text-decoration:underline;
+}
+
 .file a {
   text-decoration:none;
 }
@@ -250,4 +290,32 @@ caption {
   margin-bottom:1em;
   font-size: 75%;
 }
+
+
+
+
+
+@media (prefers-color-scheme: dark) {
+
+  .light-mode-only {
+    display: none;
+  }
+  .dark-mode-only {
+    display: block;
+  }
+
+  body, a, #search {
+    color:white;
+  }
+  
+  body {
+    background:#2d2d2d;
+   }
+  
+  .file .tag {
+    background:rgba(255,255,255,0.2);
+  }
+  .file .thumbnail-container {
+    background-color:rgb(60,60,60);
+  }
 </style>
