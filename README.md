@@ -1,7 +1,12 @@
 
 
+![Favicon](https://github.com/alcor/figment/blob/master/img/favicon.png?raw=true) 
+
+
 # Figment
 Figment lets folks on your team share figma files with basic search, tags, and more. It is run as a Google Sheet, which allows it to work within most organizations, using the permissions of one individual in that team.
+
+![Screenshot](https://github.com/alcor/figment/blob/master/img/screenshot.png?raw=true)
 
 ## Initial Setup
 
