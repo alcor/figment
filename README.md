@@ -26,11 +26,20 @@ Figment lets folks on your team share figma files with basic search, tags, and m
 - Update
 - Approve any permissions dialogs which may appear
 
+# Adding content
 
+### Add Sources
+- Open the "Sources" sheet and paste links to figma teams or proje (cts, one per row.
+- In the sheets menu bar, select Figment -> Get Latest Figment Data
+
+### Setting sources to update automatically
+- In the Script Editor (Tools -> Script Editor), choose (Edit -> Current Project Triggers)
+- Choose + Add Trigger in the lower Right
+- Set up a trigger to run "getLatestFigmentData" automatically every hour (or as you see fit)
 
 ## Getting Updates
 - Install Google Apps Script GitHub Assistant https://chrome.google.com/webstore/detail/google-apps-script-github/lfjcgcmkmjjlieihflfhjopckgpelofo
 - Choose Login SCM
 - Click gear, choose Manage manifest file
 - Choose repsitory, select alcor/figment
-- Hit down arrow to pull
+- Hit down arrow icon in the toolbar to pull the latest
