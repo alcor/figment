@@ -8,6 +8,11 @@ Figment lets folks on your team share figma files with basic search, tags, and m
 
 ![Screenshot](https://github.com/alcor/figment/blob/master/img/screenshot.png?raw=true)
 
+
+## Requirements
+- Figma
+- Gsuite (Google Sheets + App Script)
+
 ## Initial Setup
 
 ### Creating the sheet
