@@ -1,3 +1,5 @@
+
+
 # Figment
 Figment lets folks on your team share figma files with basic search, tags, and more. It is run as a Google Sheet, which allows it to work within most organizations, using the permissions of one individual in that team.
 
