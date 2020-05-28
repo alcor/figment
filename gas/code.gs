@@ -1,5 +1,5 @@
 //
-// Figment
+// Figment 1.0.0
 //
 // see https://github.com/alcor/figment/ for information on
 // initial setup and how to update this script to the latest version 
