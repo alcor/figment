@@ -1,5 +1,5 @@
 //
-// Figment 1.0.0
+// Figment 1.0.1
 //
 // see https://github.com/alcor/figment/ for information on
 // initial setup and how to update this script to the latest version 
@@ -53,7 +53,7 @@ function getSheet_(name, creationCallback) {
   return sheet;
 }
 
-var fileColumns = ["Key", "Title", "Modified", "Thumbnail", "Team", "Project", "Cached", "Color", "Preview", "Author", "Avatar"]
+var fileColumns = ["Key", "Title", "Modified", "Thumbnail", "Team", "Project", "Last Update", "Color", "Preview", "Author", "Avatar", "Favorites", "Opens", "Relevance"]
 var fileKeys = fileColumns.reduce((a,b,i) => (a[b]=Math.floor(i),a),{});
 
 function initialSetup_() {
@@ -68,10 +68,8 @@ function createAllSheets_() {
 
 function getDataSheet_() {
   return getSheet_("Data", sheet => {
-    sheet.appendRow(["Key", "Title", "Updated", "Thumbnail", "Team", "Project", "Meta Timestamp", "Color", "Preview", "Author", "Avatar"])
-    var lastRow = sheet.getLastRow();
-    var range = sheet.getRange(lastRow + 1, 1); // getRange() can take 'A1' notation or (row, column) for a single cell
-    range.setValue('=query(Files!A2:K,"select * order by C desc LIMIT 60")')
+    var range = sheet.getRange(1, 1);
+    range.setValue('=query(Files!A:AL,"select * order by C desc LIMIT 120", 1)')
   });
 }
 
@@ -196,6 +194,33 @@ function updateFile_(file, i, filesSheet) {
 
     }
   }
+}
+
+function incrementAttributeValueTest() {
+incrementAttributeValue("GBqEcdoZqwgpHqV7LLyWJB", "Favorites", 1);
+}
+function incrementAttributeValue(key, attribute, change) {
+  var filesSheet = getFilesSheet_();
+  var filesData = filesSheet.getDataRange().getValues();
+  
+  var column;
+  for (var i = 0; i < filesData[0].length; i++) {
+    if (filesData[0][i] == attribute) {
+      column = i;
+      break;
+    }
+  }
+  for (var i = 0; i < filesData.length; i++) {
+    var row = filesData[i];
+    if (row[0] == key) {
+      var value = row[column];
+      value += change;
+      filesSheet.getRange(i + 1, column + 1, 1, 1).setValues([[value]])
+      break;
+    }
+  }
+
+
 }
 
 function getUrlParameter_(name, url) {

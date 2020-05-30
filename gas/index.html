@@ -47,7 +47,6 @@ function updateSearchIndex() {
     
   var terms = [row[1], "#" + tags.join(" #"), "@" + row[9]]
   row.index = terms.join("\n").toLowerCase();
-  console.log(row);
   });
 }
 
@@ -231,10 +230,10 @@ function render(response) {
   
 
   data.forEach(function(row) {
-    var url = row[0]
-    if (!url) return;
-    url = "https://www.figma.com/file/" + url;
-    
+    var key = row[0]
+    if (!key) return;
+    var url = "https://www.figma.com/file/" + key;
+    console.log(url);
     var title = row[1]
     var ts = row[2]
     var thumbnail = row[3]
@@ -249,7 +248,9 @@ function render(response) {
     var authorimg = row[10]; //row[1].split("@").shift()
     var description = ""; //row[3]
     var modified = new Date(row[2]);
-  
+    var favorites = row[11];
+    var opens = row[12];
+
     authorimg = authorimg.replace(/default=.*/, "default=blank");
     var tagEls = [];
 
@@ -264,10 +265,11 @@ function render(response) {
       });
   
 
+    var isFavorite = (window.localStorage.getItem(key));
     
     var nativeURL = url.replace("https://www.figma.com/", "figma://");
     thumbnails.push(m("div", {className: "file", href:url}, 
-      m("a", {href:url, target:"_blank"},
+      m("a", {href:url, target:"_blank", onclick:() => {recordOpen(key)}},
         m("div", {className:"thumbnail-container", style:bgcolor ? "background-color:" + bgcolor : ""},
           m("div", {className:"thumbnail", style:"background-image:url('" + thumbnail + "')"}),
           //m("div", {className:"thumbnail alt", style:"background-image:url('" + thumbnail2 + "')"})
@@ -282,7 +284,9 @@ function render(response) {
           m("span", {className:"author", onclick: () => { return filterByAuthor(author) }}, author)
         ),
         //m("span", {className:"description"}, description ? description + " " : ""),
-        m("br"), tagEls
+        m("br"),
+        m("div", {className:"favorite" + (isFavorite ? " active": ""), id:key, onclick:toggleFavorite}, favorites.toString() + " "),
+        tagEls
       )
     ));
   });
@@ -312,6 +316,23 @@ function render(response) {
   )
   container.appendChild(content);
   window.localStorage.setItem("pagecache", container.innerHTML)
+}
+
+function recordOpen(key) {
+  google.script.run.incrementAttributeValue(key, "Opens", 1);
+}
+
+function toggleFavorite(e) {
+  var el = e.target;
+  var key = el.id;
+  var active = !el.classList.contains("active")
+  el.classList.toggle("active");
+  window.localStorage.setItem(key, active ? "1" : "0");
+  console.log(el, key, "Favorites", active ? 1 : -1)
+  google.script.run.withSuccessHandler(() => {
+  
+  }).incrementAttributeValue(key, "Favorites", active ? 1 : -1);
+
 }
 
 function renderTagHeaderTemplate() {
@@ -381,7 +402,9 @@ google.script.url.getLocation(function(location) {
   setup()
 });
 
+setInterval(fetch, 60 * 60 * 1000); // check again in one hour
 fetch();
+
 
 function search(e) {
   
