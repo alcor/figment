@@ -38,6 +38,7 @@ function doGet(e) {
   return output
     .setTitle("Figment")
     .addMetaTag('viewport', 'width=device-width, initial-scale=1')
+    .setFaviconUrl("https://github.com/alcor/figment/raw/master/img/favicon.png?raw=true")
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
 }
 
@@ -53,7 +54,8 @@ function getSheet_(name, creationCallback) {
   return sheet;
 }
 
-var fileColumns = ["Key", "Title", "Modified", "Thumbnail", "Team", "Project", "Last Update", "Color", "Preview", "Author", "Avatar", "Favorites", "Opens", "Relevance"]
+var LAST_UPDATE_KEY = "Last Update";
+var fileColumns = ["Key", "Title", "Modified", "Thumbnail", "Team", "Project", LAST_UPDATE_KEY, "Color", "Preview", "Author", "Avatar", "Favorites", "Opens", "Relevance"]
 var fileKeys = fileColumns.reduce((a,b,i) => (a[b]=Math.floor(i),a),{});
 
 function initialSetup_() {
@@ -176,11 +178,10 @@ function updateFiles_() {
     SpreadsheetApp.flush();
   }
 }
-
 function updateFile_(file, i, filesSheet) {
   var key = file[0];
   var updated = file[2];
-  var metadataUpdated  = file[fileKeys["Cached"]]
+  var metadataUpdated  = file[fileKeys[LAST_UPDATE_KEY]]
   
   if (!metadataUpdated.length ||  updated > metadataUpdated) {
     Logger.log("Updating " + key);
@@ -188,7 +189,7 @@ function updateFile_(file, i, filesSheet) {
       var metadata = [updated]
       metadata = metadata.concat(getFramePreviews_(key))
       metadata = metadata.concat(getVersions_(key))
-      filesSheet.getRange(i + 1, fileKeys["Cached"] + 1, 1, metadata.length).setValues([metadata])
+      filesSheet.getRange(i + 1, fileKeys[LAST_UPDATE_KEY] + 1, 1, metadata.length).setValues([metadata])
     }  catch (e) {
             filesSheet.getRange(i + 1, 14, 1, 1).setValues([[JSON.stringify(e)]])
 
