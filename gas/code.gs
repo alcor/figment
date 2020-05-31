@@ -38,7 +38,7 @@ function doGet(e) {
   return output
     .setTitle("Figment")
     .addMetaTag('viewport', 'width=device-width, initial-scale=1')
-    .setFaviconUrl("https://github.com/alcor/figment/raw/master/img/favicon.png?raw=true")
+    .setFaviconUrl("https://raw.githubusercontent.com/alcor/figment/master/img/favicon.png")
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
 }
 
@@ -191,15 +191,11 @@ function updateFile_(file, i, filesSheet) {
       metadata = metadata.concat(getVersions_(key))
       filesSheet.getRange(i + 1, fileKeys[LAST_UPDATE_KEY] + 1, 1, metadata.length).setValues([metadata])
     }  catch (e) {
-            filesSheet.getRange(i + 1, 14, 1, 1).setValues([[JSON.stringify(e)]])
-
+      filesSheet.getRange(i + 1, 14, 1, 1).setValues([[JSON.stringify(e)]])
     }
   }
 }
 
-function incrementAttributeValueTest() {
-incrementAttributeValue("GBqEcdoZqwgpHqV7LLyWJB", "Favorites", 1);
-}
 function incrementAttributeValue(key, attribute, change) {
   var filesSheet = getFilesSheet_();
   var filesData = filesSheet.getDataRange().getValues();

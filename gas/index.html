@@ -40,14 +40,19 @@ function fetch() {
 
 var tagSplitRE = / ?(?:,|\[|\]| - ) ?/
 function updateSearchIndex() {
+  var teams = [];
  cachedResponse.data.forEach(row => {
  var tags = row[4] + ", " + row[5]
  tags = tags.split(tagSplitRE);
-    
-    
+  var rating = parseInt(row[11]); 
+  row.rating = rating;
+  var team = row[4];
+  if (team.length) teams[team] = team;
+
   var terms = [row[1], "#" + tags.join(" #"), "@" + row[9]]
   row.index = terms.join("\n").toLowerCase();
   });
+  cachedResponse.teams = Object.keys(teams).sort();
 }
 
 function gotData(response) {
@@ -135,30 +140,14 @@ function searchChanged(e) {
 }
 
 function setup() {
-  var addSheet = m("div", {className: "add-sheet"},
-    m("form", {onsubmit:submitAddForm}, 
-      m("label", {for:"url", type:"text"}, "Figma URL"),
-      m("input", {id:"url", type:"text", autocomplete:"off", placeholder:"https://figma.com/...."}),
-      m("caption",{}, "set a custom thumbnail first. 2:1 ratio is preferred"),
-      m("label", {for:"desc", type:"text"}, "Description"),
-      m("input", {id:"desc", type:"text", autocomplete:"off", placeholder:"Tell us about it..."}),
-      m("label", {for:"email", type:"text"}, "Email"),
-      m("input", {id:"email", type:"text", autocomplete:"on", placeholder:"name@example.com", value: window.localStorage.getItem("email") || ""}),
-      m("label", {for:"tags", type:"text"}, "Tags"),
-      m("input", {id:"tags", type:"text", autocomplete:"on", placeholder:"onboarding, exploration"}),
-      m("button", {type:"submit", id:"add-button"}, "Add")
-      )
-  )
 
   var nav = m("div", {id:"nav"}, 
       m("h1", {},
       m("div", {id:"logo", onclick:e => setSearch("")}),
-          m("input", {id:"search", size:30, type:"search", autocomplete:"off", value:activeSearch || "", placeholder:"figment", oninput:searchChanged})),
+          m("input", {id:"search", size:30, type:"search", autocomplete:"off", value:activeSearch || "", placeholder:"Figment", oninput:searchChanged})),
       m("div", {id:"toolbar"}, 
-        //m("div", {id:"team"}
-        /*m("div", {id:"add",onclick: () => {document.body.classList.toggle("add")}, target:"_blank"},
-          m("icon",{},"add"),""),
-        addSheet*/
+        //m("div", {id:"settings",onclick: () => {document.body.classList.toggle("settings")}, target:"_blank"},
+          //m("icon",{},"filter"),"")
       )
     )   
     
@@ -213,6 +202,9 @@ function render(response) {
   while (container.firstChild) container.removeChild(container.lastChild);
   
   var thumbnails = []
+
+  var currentTeam = window.localStorage.getItem("my-team");
+  if (currentTeam == "") currentTeam = undefined;
   
   var data = response.data;
 
@@ -226,9 +218,13 @@ function render(response) {
     });
     
     //activeAuthor = people.shift();
-  
+  } else {
+    data = data.filter(item => item.rating >= 1 || item[4] == currentTeam);
   }
   
+  console.log(response);
+  
+  var teams = {}
 
   data.forEach(function(row) {
     var key = row[0]
@@ -238,16 +234,17 @@ function render(response) {
     var title = row[1]
     var ts = row[2]
     var thumbnail = row[3]
-    var tags = row[4] + ", " + row[5]
+    var team = row[4];
+    var project = row[5]
+    var tags = team + ", " + project
 
     tags = tags.split(tagSplitRE);
     
     var bgcolor = row[7];
     if (bgcolor == "rgba(229,229,229,1)") bgcolor = undefined;
-    //var thumbnail2 = row[8]
+    
     var author = row[9];
-    var authorimg = row[10]; //row[1].split("@").shift()
-    var description = ""; //row[3]
+    var authorimg = row[10];
     var modified = new Date(row[2]);
     var favorites = row[11];
     var opens = row[12];
@@ -284,7 +281,6 @@ function render(response) {
           " by ",
           m("span", {className:"author", onclick: () => { return filterByAuthor(author) }}, author)
         ),
-        //m("span", {className:"description"}, description ? description + " " : ""),
         m("br"),
         m("div", {className:"favorite" + (isFavorite ? " active": ""), id:key, onclick:toggleFavorite}, favorites.toString() + " "),
         tagEls
@@ -303,16 +299,26 @@ function render(response) {
     subheader.appendChild(renderTagHeaderTemplate())
   }
 
+
+  
+  var teamOptions = response.teams.map(t => m("option", {value:t, selected:t==currentTeam}, t));
+  teamOptions.unshift(m("option", {value:"", selected:currentTeam == undefined}, "All Teams"))
+  
+  var filter = m("div", {id:"team-container"},
+    m("select", {id:"team-selector", onchange:selectTeam}, teamOptions)
+  );  
+  
   var content = m("div", {id:"content"},    
     subheader,
+    activeSearch ?  "" : filter,
     m("div", {id:"files"},
-    thumbnails,
-    m("div", {className:"flex-spacer"}),
-    m("div", {className:"flex-spacer"}),
-    m("div", {className:"flex-spacer"}),
-    m("div", {className:"flex-spacer"}),
-    m("div", {className:"flex-spacer"}),
-    m("div", {className:"flex-spacer"})
+      thumbnails,
+      m("div", {className:"flex-spacer"}),
+      m("div", {className:"flex-spacer"}),
+      m("div", {className:"flex-spacer"}),
+      m("div", {className:"flex-spacer"}),
+      m("div", {className:"flex-spacer"}),
+      m("div", {className:"flex-spacer"})
     )
   )
   container.appendChild(content);
@@ -334,6 +340,12 @@ function toggleFavorite(e) {
   
   }).incrementAttributeValue(key, "Favorites", active ? 1 : -1);
 
+}
+
+function selectTeam(e) {
+  var el = e.target;
+  var currentTeam = window.localStorage.setItem("my-team", el.value);
+  render();
 }
 
 function renderTagHeaderTemplate() {
