@@ -31,6 +31,8 @@ function doGet(e) {
   } else { // Render home screen
     var template = HtmlService.createTemplateFromFile('gas/index')
     var scriptProperties = PropertiesService.getScriptProperties();
+    template.COLUMN_KEYS = JSON.stringify(COLUMN);
+    template.omit_tags = scriptProperties.getProperty("omit_tags");
     template.slack_team = scriptProperties.getProperty("slack_team");
     output = template.evaluate();
   }
@@ -54,9 +56,28 @@ function getSheet_(name, creationCallback) {
   return sheet;
 }
 
-var LAST_UPDATE_KEY = "Last Update";
-var fileColumns = ["Key", "Title", "Modified", "Thumbnail", "Team", "Project", LAST_UPDATE_KEY, "Color", "Preview", "Author", "Avatar", "Favorites", "Opens", "Relevance"]
-var fileKeys = fileColumns.reduce((a,b,i) => (a[b]=Math.floor(i),a),{});
+
+var COLUMN = { 
+  KEY: {index:0, name:"Key"},
+  TITLE: {index:1, name:"Title"},
+  MODIFIED: {index:2, name:"Modified"},
+  THUMBNAIL: {index:3, name:"Thumbnail"},
+  TEAM: {index:4, name:"Team"},
+  PROJECT: {index:5, name:"Project"},
+  UPDATED: {index:6, name:"Updated"},
+  COLOR: {index:7, name:"Color"},
+  PREVIEW: {index:8, name:"Preview"},
+  EDITOR: {index:9, name:"Editor"},
+  EDITOR_AVATAR: {index:10, name:"Editor Avatar"},
+  AUTHOR: {index:11, name:"Author"},
+  AUTHOR_AVATAR: {index:12, name:"Author Avatar"},
+  CREATED: {index:13, name:"Created"},
+  VOTES: {index:14, name:"Votes"},
+  OPENS: {index:15, name:"Opens"},
+  RELEVANCE: {index:16, name:"Relevance"}
+}
+
+var fileColumns = Object.values(COLUMN).sort((a,b) => a.index > b.index).map(c => c.name)
 
 function initialSetup_() {
   createAllSheets_();
@@ -169,6 +190,7 @@ function updateCache_() {
   }
 }
 
+function updateFiles() { updateFiles_() };
 function updateFiles_() {
   var filesSheet = getFilesSheet_();
   var filesData = filesSheet.getDataRange().getValues();
@@ -179,19 +201,37 @@ function updateFiles_() {
   }
 }
 function updateFile_(file, i, filesSheet) {
-  var key = file[0];
-  var updated = file[2];
-  var metadataUpdated  = file[fileKeys[LAST_UPDATE_KEY]]
+  var key = file[COLUMN.KEY.index];
+  var fileUpdated = file[COLUMN.MODIFIED.index];
+  var dateCreated = file[COLUMN.CREATED.index];
+  var metadataUpdated  = file[COLUMN.UPDATED.index]
   
-  if (!metadataUpdated.length ||  updated > metadataUpdated) {
+  if (!metadataUpdated.length ||  fileUpdated > metadataUpdated) {
     Logger.log("Updating " + key);
     try {
-      var metadata = [updated]
+      filesSheet.getRange(i + 1, COLUMN.UPDATED.index + 1).setBackground("yellow")
+       SpreadsheetApp.flush();
+
+      var metadata = [fileUpdated]
       metadata = metadata.concat(getFramePreviews_(key))
-      metadata = metadata.concat(getVersions_(key))
-      filesSheet.getRange(i + 1, fileKeys[LAST_UPDATE_KEY] + 1, 1, metadata.length).setValues([metadata])
-    }  catch (e) {
-      filesSheet.getRange(i + 1, 14, 1, 1).setValues([[JSON.stringify(e)]])
+
+      var versions = getVersions_(key);
+      var lastVersion = versions.shift();
+      metadata = metadata.concat([lastVersion.user.handle, lastVersion.user.img_url]);
+      
+
+      if (dateCreated == undefined || dateCreated == "") {
+        var firstVersion = getFirstVersion_(key);
+        metadata = metadata.concat([firstVersion.user.handle, firstVersion.user.img_url, firstVersion.created_at]);
+        Logger.log("Getting first version" + JSON.stringify(metadata));
+      }  
+      
+      filesSheet.getRange(i + 1, COLUMN.UPDATED.index + 1, 1, metadata.length).setValues([metadata])
+      filesSheet.getRange(i + 1, COLUMN.UPDATED.index + 1).setBackground(null)
+
+    } catch (e) {
+      filesSheet.getRange(i + 1, 1).setNote(e.name + ": " + e.message + "\n\n" + e.stack);
+      throw e;
     }
   }
 }
@@ -200,13 +240,8 @@ function incrementAttributeValue(key, attribute, change) {
   var filesSheet = getFilesSheet_();
   var filesData = filesSheet.getDataRange().getValues();
   
-  var column;
-  for (var i = 0; i < filesData[0].length; i++) {
-    if (filesData[0][i] == attribute) {
-      column = i;
-      break;
-    }
-  }
+  var column = COLUMN[attribute].index
+
   for (var i = 0; i < filesData.length; i++) {
     var row = filesData[i];
     if (row[0] == key) {
@@ -216,7 +251,6 @@ function incrementAttributeValue(key, attribute, change) {
       break;
     }
   }
-
 
 }
 
@@ -230,9 +264,15 @@ function getUrlParameter_(name, url) {
 function getVersions_(key) {
   var versionInfo = callFigmaAPI_("https://api.figma.com/v1/files/" + key + "/versions");
   if (!versionInfo.versions || !versionInfo.versions.length) return ["No Versions",""]
-  var v = versionInfo.versions.shift();
-  return [v.user.handle, v.user.img_url];
+  return versionInfo.versions; //[v.user.handle, v.user.img_url];
 }
+
+function getFirstVersion_(key) {
+  var versionInfo = callFigmaAPI_("https://api.figma.com/v1/files/" + key + "/versions?page_size=1&before=0");
+  if (!versionInfo.versions || !versionInfo.versions.length) return undefined;
+  return versionInfo.versions.shift();
+}
+
 
 function getFramePreviews_(key) {
   var ids = [];

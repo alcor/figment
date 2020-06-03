@@ -10,6 +10,9 @@
 <body></body>
 <script>
 
+var COLUMN = <?!= COLUMN_KEYS ?>;
+var omit_tags = "<?!= omit_tags ?>"
+
 var m = function createElement(type, attrs, ...children) {
   var node = document.createElement(type);
   for (var prop in attrs) {
@@ -41,26 +44,26 @@ function fetch() {
 var tagSplitRE = / ?(?:,|\[|\]| - ) ?/
 function updateSearchIndex() {
   var teams = [];
- cachedResponse.data.forEach(row => {
- var tags = row[4] + ", " + row[5]
- tags = tags.split(tagSplitRE);
-  var rating = parseInt(row[11]); 
-  row.rating = rating;
-  var team = row[4];
-  if (team.length) teams[team] = team;
+  cachedResponse.data.forEach(row => {
+    var tags = row[COLUMN.TEAM.index] + ", " + row[COLUMN.PROJECT.index]
+    tags = tags.split(tagSplitRE);
+    var rating = parseInt(row[COLUMN.VOTES.index]); 
+    row.rating = rating;
+    var team = row[COLUMN.TEAM.index];
+    if (team.length) teams[team] = team;
 
-  var terms = [row[1], "#" + tags.join(" #"), "@" + row[9]]
-  row.index = terms.join("\n").toLowerCase();
+    var terms = [row[COLUMN.TITLE.index], "#" + tags.join(" #"), "@" + row[COLUMN.AUTHOR.index],  "@" + row[COLUMN.EDITOR.index]]
+    row.index = terms.join("\n").toLowerCase();
   });
   cachedResponse.teams = Object.keys(teams).sort();
 }
 
 function gotData(response) {
   cachedResponse = JSON.parse(response);
-  updateSearchIndex();
   var headers = cachedResponse.data.shift();
   var header = headers.reduce((a,b,i) => (a[b]=Math.floor(i),a),{});
   cachedResponse.header = header;
+  updateSearchIndex();
   document.body.classList.remove("loading");
   getUniqueAuthors(cachedResponse);
   render(cachedResponse);
@@ -201,17 +204,14 @@ function render(response) {
   var container = document.getElementById("container");
   while (container.firstChild) container.removeChild(container.lastChild);
   
-  var thumbnails = []
-
+  var thumbnails = [];
+  var teamThumbnails = [];
   var currentTeam = window.localStorage.getItem("my-team");
   if (currentTeam == "") currentTeam = undefined;
   
   var data = response.data;
 
   if (activeSearch) {
-    var tags = [];
-    var people = [];
-    var terms = [];
     var components = activeSearch.toLowerCase().split(" ")
     components.forEach(c => {
       data = data.filter(item => item.index.includes(c));
@@ -219,41 +219,47 @@ function render(response) {
     
     //activeAuthor = people.shift();
   } else {
-    data = data.filter(item => item.rating >= 1 || item[4] == currentTeam);
+    data = data.filter(item => item.rating >= 1 || item[COLUMN.TEAM.index] == currentTeam || currentTeam == "*" );
   }
   
   console.log(response);
   
+  var omitTags = omit_tags.split(",");
   var teams = {}
 
   data.forEach(function(row) {
-    var key = row[0]
+    var key = row[COLUMN.KEY.index]
     if (!key) return;
     var url = "https://www.figma.com/file/" + key;
     console.log(url);
-    var title = row[1]
-    var ts = row[2]
-    var thumbnail = row[3]
-    var team = row[4];
-    var project = row[5]
+    var title = row[COLUMN.TITLE.index]
+    var thumbnail = row[COLUMN.THUMBNAIL.index]
+    var team = row[COLUMN.TEAM.index];
+    var project = row[COLUMN.PROJECT.index]
     var tags = team + ", " + project
 
     tags = tags.split(tagSplitRE);
     
-    var bgcolor = row[7];
+    var bgcolor = row[COLUMN.COLOR.index];
     if (bgcolor == "rgba(229,229,229,1)") bgcolor = undefined;
     
-    var author = row[9];
-    var authorimg = row[10];
-    var modified = new Date(row[2]);
-    var favorites = row[11];
-    var opens = row[12];
+    var editor = row[COLUMN.EDITOR.index];
+    var editor_img = row[COLUMN.EDITOR_AVATAR.index];
 
-    authorimg = authorimg.replace(/default=.*/, "default=blank");
+    var author = row[COLUMN.AUTHOR.index];
+    var author_img = row[COLUMN.AUTHOR_AVATAR.index];
+
+    var modified = new Date(row[COLUMN.MODIFIED.index]);
+    var votes = row[COLUMN.VOTES.index];
+    var opens = row[COLUMN.OPENS.index];
+
+   // author_img = author_img.replace(/default=.*/, "default=blank");
+    //author_img = author_img.replace(/default=.*/, "default=blank");
     var tagEls = [];
 
     tags.forEach(tag => {
       if (!tag.length) return;
+      if (omitTags.includes(tag)) return;
       tag = tag.trim();
       var hashtag = tag // .replace(/\s/g,"")
       if (tag.length > 0) {
@@ -262,11 +268,14 @@ function render(response) {
         }
       });
   
-
     var isFavorite = (window.localStorage.getItem(key));
     
+    if (author == editor) author = undefined;
+    
     var nativeURL = url.replace("https://www.figma.com/", "figma://");
-    thumbnails.push(m("div", {className: "file", href:url}, 
+    
+    
+    var thumbnail = m("div", {className: "file", href:url}, 
       m("a", {href:url, target:"_blank", onclick:() => {recordOpen(key)}},
         m("div", {className:"thumbnail-container", style:bgcolor ? "background-color:" + bgcolor : ""},
           m("div", {className:"thumbnail", style:"background-image:url('" + thumbnail + "')"}),
@@ -274,18 +283,33 @@ function render(response) {
           )
         ),
       m("div", {className:"info"},
-        m("div", {className:"avatar", style:"background-image:url('" + authorimg + "')"}),
+        m("div", {className:"metadata"}, 
+          m("div", {className:"favorite" + (isFavorite ? " active": ""), id:key, onclick:toggleFavorite}, votes.toString() + " "),
+          tagEls,
+        ),
+        m("div", {className:"avatars"},
+          author ? m("div", {className:"avatar", style:"background-image:url('" + author_img + "')"}) : undefined,
+          m("div", {className:"avatar", style:"background-image:url('" + editor_img + "')"}),
+        ),
         m("div", {className:"title"}, m("a", {href:url}, title)),
         m("span", {className:"byline"}, 
           m("span", {className:"date"}, modified ? relativeDate(modified): ""),
           " by ",
-          m("span", {className:"author", onclick: () => { return filterByAuthor(author) }}, author)
+          author ? [m("span", {className:"author person", onclick: () => { return filterByAuthor(author) }}, author), ", "] : undefined,
+          m("span", {className:"editor person", onclick: () => { return filterByAuthor(editor) }}, editor)
         ),
-        m("br"),
-        m("div", {className:"favorite" + (isFavorite ? " active": ""), id:key, onclick:toggleFavorite}, favorites.toString() + " "),
-        tagEls
+        m("br")
       )
-    ));
+    );
+    
+    if (!activeSearch && team == currentTeam && teamThumbnails.length < 6) {
+      teamThumbnails.push(thumbnail)
+    } else {
+      thumbnails.push(thumbnail);
+    }
+    
+    
+    
   });
   
   var subheader = m("div")
@@ -298,11 +322,13 @@ function render(response) {
   if (activeTag) {
     subheader.appendChild(renderTagHeaderTemplate())
   }
-
-
   
   var teamOptions = response.teams.map(t => m("option", {value:t, selected:t==currentTeam}, t));
-  teamOptions.unshift(m("option", {value:"", selected:currentTeam == undefined}, "All Teams"))
+  teamOptions.unshift(m("option", {disabled:"disabled"}, "──────────"))
+  teamOptions.unshift(m("option", {value:"", selected:currentTeam == undefined}, "Upvoted"))
+  teamOptions.push(m("option", {disabled:"disabled"}, "──────────"))
+  teamOptions.push(m("option", {value:"*", selected:currentTeam == "*"}, "Everything"))
+  
   
   var filter = m("div", {id:"team-container"},
     m("select", {id:"team-selector", onchange:selectTeam}, teamOptions)
@@ -311,14 +337,16 @@ function render(response) {
   var content = m("div", {id:"content"},    
     subheader,
     activeSearch ?  "" : filter,
-    m("div", {id:"files"},
-      thumbnails,
-      m("div", {className:"flex-spacer"}),
-      m("div", {className:"flex-spacer"}),
-      m("div", {className:"flex-spacer"}),
-      m("div", {className:"flex-spacer"}),
-      m("div", {className:"flex-spacer"}),
-      m("div", {className:"flex-spacer"})
+    m("div", {id:"file-content"},
+       teamThumbnails.length > 0 ? 
+       m("div", {id:"team-files", className:"files-container"},
+        teamThumbnails,
+        ) : undefined,
+      m("div", {id:"files", className:"files-container"},    
+        thumbnails,
+
+      ),
+
     )
   )
   container.appendChild(content);
@@ -326,7 +354,7 @@ function render(response) {
 }
 
 function recordOpen(key) {
-  google.script.run.incrementAttributeValue(key, "Opens", 1);
+  google.script.run.incrementAttributeValue(key, "OPENS", 1);
 }
 
 function toggleFavorite(e) {
@@ -335,10 +363,10 @@ function toggleFavorite(e) {
   var active = !el.classList.contains("active")
   el.classList.toggle("active");
   window.localStorage.setItem(key, active ? "1" : "0");
-  console.log(el, key, "Favorites", active ? 1 : -1)
+  console.log(el, key, "VOTES", active ? 1 : -1)
   google.script.run.withSuccessHandler(() => {
   
-  }).incrementAttributeValue(key, "Favorites", active ? 1 : -1);
+  }).incrementAttributeValue(key, "VOTES", active ? 1 : -1);
 
 }
 

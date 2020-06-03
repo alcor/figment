@@ -102,12 +102,14 @@ h1 {
 }
 
 .avatar {
-  width: 48px;
-  height: 48px;
+  width: 32px;
+  height: 32px;
   background-size:cover;
   border-radius: 32px;
   float:right;
   margin-right: 0;
+  margin-left:-6px;
+  border:2px solid #f1f1f1;
 }
 
 #subheader .activeAuthor,
@@ -123,29 +125,34 @@ h2 {
   font-weight: 700;
 }
 
+#file-content {
+}
 
-#files {
-  display:flex;
-  flex-direction:row;
-  flex-wrap:wrap;
-  justify-content:space-between;
-  margin: 0 8vw;
+#team-files {
+border-bottom:1px dotted #ccc;
+margin-bottom:6em;
+}
+
+#team-files:empty {
+display:none;
+}
+
+.files-container {
+  margin: 0 8vw; 
+  padding: 0 1em 1em;
+  display: -ms-grid;
+  display: grid;
+  grid-template-columns: repeat(auto-fill,minmax(300px,1fr));
+  grid-gap: 1em 3em;
   
-    padding: 0 1em 1em;
-    display: -ms-grid;
-    display: grid;
-    grid-template-columns: repeat(auto-fill,minmax(300px,1fr));
-    grid-gap: 2em 2em;
 }
 
 
 
 .file, .flex-spacer {
-  xmax-width:500px;
   flex: 1 0 auto;
   flex-basis:300px;
   padding: 0em;
-  xmargin: 1em;
   }
   
   .file .thumbnail-container {
@@ -177,16 +184,16 @@ h2 {
 .file .title {
   font-weight:400;
   font-size:larger;
+  margin-top:0.5em
   margin-bottom:.1em;
 }
 
 .file .info {
-margin:1em 0 ;
+margin:.5em 0 ;
   text-decoration:none;
 }
 
 .file .description, 
-.file .author,
 .file .byline,
 .file .tag {
   font-size:11px;
@@ -195,29 +202,28 @@ margin:1em 0 ;
 }
 
 
-.favorite::before {
-  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' height='24' viewBox='0 0 24 24' width='24'%3E%3Cpath d='M0 0h24v24H0z' fill='none'/%3E%3Cpath d='M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z'/%3E%3C/svg%3E");
-  -webkit-mask-size:contain;
-  content:" ";
-  width:1em;
-  height:1em;
-  font-size:16px;
-  float:left;
-  display:block;
-  background-color:gray;
-  margin-top:0.2em;
-  margin-right:0.15em;
+.favorite {
+  float:right;
+  cursor:pointer;
+  font-size:10px;  
 }
 
-.favorite {
-  cursor:pointer;
-  font-size:9px;
+.favorite::before { 
+  -webkit-mask-image: url("data:image/svg+xml,%0A%3Csvg xmlns='http://www.w3.org/2000/svg' height='24' viewBox='0 0 24 24' width='24'%3E%3Cpath d='M0 0h24v24H0z' fill='none'/%3E%3Cpath d='M16.5 3c-1.74 0-3.41.81-4.5 2.09C10.91 3.81 9.24 3 7.5 3 4.42 3 2 5.42 2 8.5c0 3.78 3.4 6.86 8.55 11.54L12 21.35l1.45-1.32C18.6 15.36 22 12.28 22 8.5 22 5.42 19.58 3 16.5 3zm-4.4 15.55l-.1.1-.1-.1C7.14 14.24 4 11.39 4 8.5 4 6.5 5.5 5 7.5 5c1.54 0 3.04.99 3.57 2.36h1.87C13.46 5.99 14.96 5 16.5 5c2 0 3.5 1.5 3.5 3.5 0 2.89-3.14 5.74-7.9 10.05z'/%3E%3C/svg%3E");
+  -webkit-mask-size:1em;
+  content:" ";
+  margin-top:-.2em;
+  width:1em;
+  height:1em;
+  font-size:14px;
+  float:right;
   display:block;
-  float:left;
-  margin-right:0.5em;
-  line-height:24px;
+  background-color:gray;
+  margin-right:0.05em;
 }
+
 .favorite.active::before {
+  -webkit-mask-image: url("data:image/svg+xml,%0A%3Csvg xmlns='http://www.w3.org/2000/svg' height='24' viewBox='0 0 24 24' width='24'%3E%3Cpath d='M0 0h24v24H0z' fill='none'/%3E%3Cpath d='M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z'/%3E%3C/svg%3E");
   background-color:#F24E1E;
 };
 
@@ -230,17 +236,35 @@ opacity: 1.0;
   color:red;
 }
 
+.file .metadata {
+  margin-bottom:0.5em;
+  line-height:0.5em;
+}
+.tags {
+margin-left:-.25em;
+  flex: 1 1 auto;
+}
+
+.favorite {
+  flex: 0 0 3em;
+}
+.spacer {
+  flex-grow: 1;
+}
 
 .file .tag {
-  background:rgba(0,0,0,0.1);
-  opacity:0.75;
+  opacity:0.54;
   border-radius:1px;
   padding:0 0.5em;
   font-size:9px;
   text-transform:uppercase;
-  letter-spacing:1px;
-  margin-right: 1em;
+  letter-spacing:0.5px;
+  margin-right: 0.5em;
   cursor:default;
+  white-space: nowrap;
+  margin-bottom:0.25em;
+  display:inline-block;
+  
 }
 .file .tag:hover {
   background:rgba(0,0,0,0.2);
@@ -284,9 +308,10 @@ icon, .icon {
 }
 
 #team-container select {
-border:0;
-background:none;
+border-radius:0;
+background-color:#ddd;
 text-align:right;
+border:none;
 }
 
 body.loading {
@@ -298,6 +323,10 @@ body{
   transition:filter .8s ease-out, opacity .3s;
 }
 
+.person:hover {
+cursor: pointer;
+text-decoration: underline;
+}
 
 .settings-sheet {
   background: white;
