@@ -325,7 +325,7 @@ function render(response) {
   
   var teamOptions = response.teams.map(t => m("option", {value:t, selected:t==currentTeam}, t));
   teamOptions.unshift(m("option", {disabled:"disabled"}, "──────────"))
-  teamOptions.unshift(m("option", {value:"", selected:currentTeam == undefined}, "Upvoted"))
+  teamOptions.unshift(m("option", {value:"", selected:currentTeam == undefined}, "Team Favorites"))
   teamOptions.push(m("option", {disabled:"disabled"}, "──────────"))
   teamOptions.push(m("option", {value:"*", selected:currentTeam == "*"}, "Everything"))
   
