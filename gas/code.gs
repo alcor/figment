@@ -226,8 +226,9 @@ function updateFile_(file, i, filesSheet) {
         Logger.log("Getting first version" + JSON.stringify(metadata));
       }  
       
-      filesSheet.getRange(i + 1, COLUMN.UPDATED.index + 1, 1, metadata.length).setValues([metadata])
-      filesSheet.getRange(i + 1, COLUMN.UPDATED.index + 1).setBackground(null)
+      filesSheet.getRange(i + 1, COLUMN.UPDATED.index + 1, 1, metadata.length).setValues([metadata]);
+      filesSheet.getRange(i + 1, COLUMN.UPDATED.index + 1).setBackground(null);
+      filesSheet.getRange(i + 1, 1).setNote(null);
 
     } catch (e) {
       filesSheet.getRange(i + 1, 1).setNote(e.name + ": " + e.message + "\n\n" + e.stack);
