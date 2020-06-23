@@ -274,21 +274,57 @@ function getFirstVersion_(key) {
   return versionInfo.versions.shift();
 }
 
-
+var canvasIgnoreRE = /^(cover|COVER|Cover|Title|title|--+|––+|——+)/i
 function getFramePreviews_(key) {
-  var ids = [];
-  var fileInfo = callFigmaAPI_("https://api.figma.com/v1/files/" + key + "?depth=1")
+  var fileInfo = callFigmaAPI_("https://api.figma.com/v1/files/" + key + "?depth=2")
+  if (fileInfo == undefined) fileInfo = callFigmaAPI_("https://api.figma.com/v1/files/" + key + "?depth=1")
+  
   var document = fileInfo.document;
+  
   if (!document) return ["magenta", ""];
   var page0 = document.children[0];
   var frame0 = page0.children[0];
   var background = page0.backgroundColor;
   var color = "rgba(" + [Math.round(background.r * 255), Math.round(background.g * 255), Math.round(background.b * 255), background.a].join(",") + ")";
   var frameURL = "";
-  if (frame0) {
-    ids.push(frame0.id);
-     var images = callFigmaAPI_("https://api.figma.com/v1/images/" + key + (ids ? "?ids=" + ids.join(",") : ""))
-     frameURL = images.images[frame0.id];
+  var defaultCanvasId;
+  var thumbnailIds = [];
+  document.children.forEach(canvas => {
+    var name = canvas.name;
+    var utilityCanvas = name.match(canvasIgnoreRE);
+    if (!defaultCanvasId && !utilityCanvas) {
+      defaultCanvasId = canvas.id;
+      Logger.log(defaultCanvasId);
+    }
+    
+    if (utilityCanvas) return;
+    
+    canvas.children.forEach(frame => {
+      if (thumbnailIds.length > 4) return;
+      var box = frame.absoluteBoundingBox;
+      if (frame.type != "FRAME") return;
+      if (box.width < 360) return;
+      if (box.height < 720) return;
+      
+      if ((box.width / box.height) > 3) return;
+      if ((box.height / box.width) > 3) return;
+      
+      thumbnailIds.push(frame.id);
+    
+    });
+    
+  });
+  
+  
+  
+  if (thumbnailIds.length > 0) {
+     var response = callFigmaAPI_("https://api.figma.com/v1/images/" + key + (thumbnailIds ? "?ids=" + thumbnailIds.join(",") : ""));
+     
+     var images = [];
+     thumbnailIds.forEach(id => {
+       images.push(response.images[id]);
+     });
+     frameURL = images.join(",");
   }
   return [color, frameURL];
 }
@@ -342,7 +378,6 @@ function getFigmaInfo_(url) {
 function callFigmaAPI_(url) {
   var response = UrlFetchApp.fetch(url, {headers: {"X-FIGMA-TOKEN": scriptProperties.getProperty("figma_token")}});
   var json = response.getContentText();
-  var data = JSON.parse(json);
   try {
     var data = JSON.parse(json);
     return data;

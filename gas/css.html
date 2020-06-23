@@ -110,6 +110,7 @@ h1 {
   margin-right: 0;
   margin-left:-6px;
   border:2px solid #f1f1f1;
+  background-color:#ccc;
 }
 
 #subheader .activeAuthor,
@@ -164,22 +165,56 @@ display:none;
   }
   
 .file .thumbnail {
-  margin:3%;
-  padding-top:61.8%;
-  width:94%;
+  margin:0;
+  padding-top:60%;
+  width:100%;
+  background-size:cover;
+  background-position:left top ;
+  background-repeat:no-repeat;
+  flex: 1 0 auto;
+  background-repeat: no-repeat;
+  box-sizing:border-box;  
+}
+
+.file:not(:hover) .thumbnail {
+  transition: transform 0.2s ease-out, opacity 1.0s;
+}
+
+.file:not(:hover) .thumbnail {
+   transition-delay:1.0s;
+}
+.thumbnail-container .thumbnail {
+  margin-left:-100%;
+  opacity:0.0;
+  transform:translateY(0);
+
+}
+
+.thumbnail.cover{
+  margin-left:0;
   background-size:contain;
   background-position:center center ;
-  background-repeat:no-repeat;
-  transition: transform 0.1s ease-out;
-    flex: 1 0 auto;
-    background-repeat: no-repeat;
-    box-sizing:border-box;
 }
 
-.file:hover .thumbnail {
-  transform:scale(1.03);
+.thumbnail:not(.cover) {
+  background-color:gray;
+}
+
+.thumbnail.cover,
+.thumbnail-container:not([index]) .thumbnail:nth-child(1),
+.thumbnail-container[index="1"] .thumbnail:nth-child(1),
+.thumbnail-container[index="2"] .thumbnail:nth-child(2),
+.thumbnail-container[index="3"] .thumbnail:nth-child(3),
+.thumbnail-container[index="4"] .thumbnail:nth-child(4),
+.thumbnail-container[index="5"] .thumbnail:nth-child(5),
+.thumbnail-container[index="6"] .thumbnail:nth-child(6) {
+ opacity:1.0;
+   transform:translateY(0);
+   transition-delay:0s;
+   
 
 }
+
 
 .file .title {
   font-weight:400;
