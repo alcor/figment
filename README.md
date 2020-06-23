@@ -19,25 +19,17 @@ Figment shares the work your whole team is doing with basic search, filtered vie
 - Create a copy of the [Figment Master Sheet](https://docs.google.com/spreadsheets/d/1DGcuIwNQIi2kulaafiv-73OwpkgvsKvrXTv5H4Nm624/copy)
 
 ### Setting Properties
-- Open the script editor via Tools ▶ Script Editor   
-- In the script editor, add the following Keys under  File ▶ Project properties ▶ Script properties
-  - **figma_token** - your "Personal Access Token" for Figma, which can be generated from the Settings section of Figma 
-  - **domain** - example.com
-  - **slack_team** - The slack team id (optional)
-  - sheet_url - the url for the spreadsheet you just created (optional, only if it does not work without it)
+- Run Setup from the Figment menu
+- Add a few teams/projects to the Sources sheet (one per row.)
+- Sync Figment Data from the Figment menu
 
 ### Deploying
+- Open the script editor via Tools ▶ Script Editor   
 - Hit Publish ▶ Deploy as web app
   - Execute the app "as Me"
   - Give access to "Only myself"
 - Update
 - Approve any permissions dialogs which may appear
-
-# Adding content
-
-### Add Sources
-- Open the "Sources" sheet and paste links to figma teams or proje (cts, one per row.
-- In the sheets menu bar, select Figment ▶ Get Latest Figment Data
 
 ### Setting sources to update automatically
 - In the Script Editor (Tools ▶ Script Editor), choose (Edit ▶ Current Project Triggers)
