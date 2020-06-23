@@ -13,9 +13,9 @@ function getLatestFigmentData() { return getLatestFigmentData_(); }
 
 function onOpen() {
   var ui = SpreadsheetApp.getUi();
-  ui.createMenu('Figment')
-    .addItem('Sync Figment Data', 'getLatestFigmentData')
-    .addItem('Run Setup', 'initialSetup_')
+  ui.createMenu('🅵 Figment')
+    .addItem('🔄 Sync Figment Data', 'getLatestFigmentData')
+    .addItem('⚙️ Run Setup', 'initialSetup_')
     .addToUi();
 }
 
@@ -93,7 +93,7 @@ function requestToken_() {
 
   var ui = SpreadsheetApp.getUi(); // Same variations.
   var result = ui.prompt(
-      'Let\'s get started!',
+      '⚙ Figment Setup',
       'Please enter a Figma Personal Access Token\nfrom https://www.figma.com/settings\n',
       ui.ButtonSet.OK_CANCEL);
 
