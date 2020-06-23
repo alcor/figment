@@ -15,15 +15,15 @@ Figment shares the work your whole team is doing with basic search, filtered vie
 
 ## Initial Setup
 
-1. Creating the sheet
+### 1. Creating the sheet
 - Create a copy of the [Figment Master Sheet](https://docs.google.com/spreadsheets/d/1DGcuIwNQIi2kulaafiv-73OwpkgvsKvrXTv5H4Nm624/copy)
 
-2. Setting Properties
+### 2. Setting Properties
 - Run Setup from the Figment menu
 - Add a few teams/projects to the Sources sheet (one per row.)
 - Sync Figment Data from the Figment menu
 
-3. Deploying
+### 3. Deploying
 - Open the script editor via Tools ▶ Script Editor   
 - Hit Publish ▶ Deploy as web app
   - Execute the app "as Me"
@@ -31,12 +31,12 @@ Figment shares the work your whole team is doing with basic search, filtered vie
 - Update
 - Approve any permissions dialogs which may appear
 
-4. Setting sources to update automatically
+### 4. Setting sources to update automatically
 - In the Script Editor (Tools ▶ Script Editor), choose (Edit ▶ Current Project Triggers)
 - Choose + Add Trigger in the lower Right
 - Set up a trigger to run "getLatestFigmentData" automatically every hour (or as you see fit)
 
-5. Getting Updates
+### 5. Getting Updates
 - Install Google Apps Script GitHub Assistant https://chrome.google.com/webstore/detail/google-apps-script-github/lfjcgcmkmjjlieihflfhjopckgpelofo
 - Choose Login SCM
 - Click gear, choose Manage manifest file
