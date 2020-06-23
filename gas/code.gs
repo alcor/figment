@@ -1,5 +1,5 @@
 //
-// Figment 1.0.3
+// Figment 1.0.4
 //
 // see https://github.com/alcor/figment/ for information on
 // initial setup and how to update this script to the latest version 
@@ -14,8 +14,8 @@ function getLatestFigmentData() { return getLatestFigmentData_(); }
 function onOpen() {
   var ui = SpreadsheetApp.getUi();
   ui.createMenu('Figment')
-    .addItem('Get Latest Figment Data', 'getLatestFigmentData')
-    .addItem('Create Figment Sheets', 'initialSetup_')
+    .addItem('Sync Figment Data', 'getLatestFigmentData')
+    .addItem('Run Setup', 'initialSetup_')
     .addToUi();
 }
 
@@ -81,6 +81,33 @@ var fileColumns = Object.values(COLUMN).sort((a,b) => a.index > b.index).map(c =
 
 function initialSetup_() {
   createAllSheets_();
+  
+  var token;// = scriptProperties.getProperty("figma_token");
+  if (token == undefined) {
+    requestToken_();
+  }
+  
+}
+  
+function requestToken_() {
+
+  var ui = SpreadsheetApp.getUi(); // Same variations.
+  var result = ui.prompt(
+      'Let\'s get started!',
+      'Please enter a Figma Personal Access Token\nfrom https://www.figma.com/settings\n',
+      ui.ButtonSet.OK_CANCEL);
+
+  // Process the user's response.
+  var button = result.getSelectedButton();
+  var text = result.getResponseText();
+  if (button == ui.Button.OK) {
+    // User clicked "OK".
+    scriptProperties.setProperty("figma_token", text);
+    ui.alert('Access Token Saved!\nNow add some teams and projects, and Sync Figma data');
+  } else if (button == ui.Button.CANCEL) {
+  } else if (button == ui.Button.CLOSE) {
+  }
+  
 }
 
 function createAllSheets_() {
