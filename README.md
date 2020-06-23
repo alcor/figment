@@ -23,7 +23,7 @@ Figment shares the work your whole team is doing with basic search, filtered vie
 - Add a few teams/projects to the Sources sheet (one per row.)
 - Sync Figment Data from the Figment menu
 
-### 3. Deploying
+### 3. Deploying the website
 - Open the script editor via Tools ▶ Script Editor   
 - Hit Publish ▶ Deploy as web app
   - Execute the app "as Me"
