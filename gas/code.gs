@@ -251,11 +251,12 @@ function updateFiles_() {
   lock.releaseLock();
 }
 function updateFile_(file, i, filesSheet) {
+
   var key = file[COLUMN.KEY.index];
   var fileUpdated = file[COLUMN.MODIFIED.index];
-  var dateCreated = file[COLUMN.CREATED.index];
   var metadataUpdated  = file[COLUMN.UPDATED.index]
   var metadata = file[COLUMN.METADATA.index]
+  var updateColumn = COLUMN.UPDATED.index + 1;
   
   try {
     metadata = JSON.parse(metadata);
@@ -276,20 +277,19 @@ function updateFile_(file, i, filesSheet) {
       metadata.edited = {id:lastVersion.user.handle, img:lastVersion.user.img_url, ts:lastVersion.created_at};
       metadata.vcount = versions.count;
       
-      //metadata = metadata.concat([lastVersion.user.handle, lastVersion.user.img_url]);
-      
       if (metadata.created == undefined) {
         var firstVersion = getFirstVersion_(key);
         metadata.created = {id:firstVersion.user.handle, img:firstVersion.user.img_url, ts:firstVersion.created_at};
       }  
       
-      filesSheet.getRange(i + 1, COLUMN.UPDATED.index + 1, 1, 2).setValues([[fileUpdated, JSON.stringify(metadata)]]);
-      filesSheet.getRange(i + 1, COLUMN.UPDATED.index + 1).setBackground(null);
-      filesSheet.getRange(i + 1, COLUMN.UPDATED.index + 1).setNote(null);
+      filesSheet.getRange(i + 1, updateColumn, 1, 2).setValues([[fileUpdated, JSON.stringify(metadata)]]);
+      filesSheet.getRange(i + 1, updateColumn).setBackground(null);
+      filesSheet.getRange(i + 1, updateColumn).setNote(null);
 
     } catch (e) {
-      filesSheet.getRange(i + 1, 1).setNote(e.name + ": " + e.message + "\n\n" + e.stack);
-      throw e;
+      filesSheet.getRange(i + 1, updateColumn).setNote(e.name + ": " + e.message + "\n\n" + e.stack);
+      filesSheet.getRange(i + 1, updateColumn).setBackground("red");
+      return;
     }
   }
 }
@@ -335,7 +335,8 @@ var canvasIgnoreRE = /^(cover|COVER|Cover|Title|title|--+|––+|——+)/i
 function getFramePreviews_(key) {
   var fileInfo = callFigmaAPI_("https://api.figma.com/v1/files/" + key + "?depth=2")
   if (fileInfo == undefined) fileInfo = callFigmaAPI_("https://api.figma.com/v1/files/" + key + "?depth=1")
-  
+  if (fileInfo == undefined) return {};
+
   var document = fileInfo.document;
   if (!document) return {};
   
@@ -413,7 +414,6 @@ function getFigmaProjects_(teamId) {
   var json = response.getContentText();
   var data = JSON.parse(json);
   return data;
-  //return data.projects.map(o => [data.name, o.id, o.name])
 }
  
 function getFigmaFiles_(projectId, prefix) {
@@ -426,8 +426,6 @@ function getFigmaFiles_(projectId, prefix) {
 }
 
 function getFigmaInfo_(url) {
-  // curl -H 'X-FIGMA-TOKEN: <personal access token>' ''
-  // GET/v1/files/:key/comments
   var re = /https:\/\/([\w\.-]+\.)?figma.com\/(file|proto)\/([0-9a-zA-Z]{22,128})(?:\/.*)?$/
   var match = url.match(re)
   Logger.log(match);
@@ -440,9 +438,9 @@ function getFigmaInfo_(url) {
 }
 
 function callFigmaAPI_(url) {
-  var response = UrlFetchApp.fetch(url, {headers: {"X-FIGMA-TOKEN": scriptProperties.getProperty("figma_token")}});
-  var json = response.getContentText();
   try {
+    var response = UrlFetchApp.fetch(url, {headers: {"X-FIGMA-TOKEN": scriptProperties.getProperty("figma_token")}});
+    var json = response.getContentText();
     var data = JSON.parse(json);
     return data;
   } catch (e) {
