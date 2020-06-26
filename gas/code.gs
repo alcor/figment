@@ -1,5 +1,5 @@
 //
-// Figment 1.1.0
+// Figment 1.1.1
 //
 // see https://github.com/alcor/figment/ for information on
 // initial setup and how to update this script to the latest version 
@@ -67,15 +67,8 @@ var COLUMN = {
   PROJECT: {index:5, name:"Project"},
   UPDATED: {index:6, name:"Updated"},
   METADATA: {index:7, name:"Metadata"},
-  PREVIEW: {index:8, name:""},
-  EDITOR: {index:9, name:""},
-  EDITOR_AVATAR: {index:10, name:""},
-  AUTHOR: {index:11, name:""},
-  AUTHOR_AVATAR: {index:12, name:""},
-  CREATED: {index:13, name:""},
-  VOTES: {index:14, name:"Votes"},
-  OPENS: {index:15, name:"Opens"},
-  RELEVANCE: {index:16, name:"Relevance"}
+  VOTES: {index:8, name:"Votes"},
+  OPENS: {index:9, name:"Opens"}
 }
 
 var fileColumns = Object.values(COLUMN).sort((a,b) => a.index > b.index).map(c => c.name)
