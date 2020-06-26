@@ -25,8 +25,8 @@ It is a fancy Google Sheet with scripts, which allows it to work within most org
 - Choose Sync Figment Data from the Figment menu
 
 ### 3. Deploying the website
-- Open the script editor via Tools ▶ Script Editor   
-- Hit Publish ▶ Deploy as web app
+- Open the script editor via Tools ▸ Script Editor   
+- Hit Publish ▸ Deploy as web app
   - Execute the app "as Me"
   - Give access to "Only myself"
 - Update
