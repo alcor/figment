@@ -4,14 +4,15 @@
 
 
 # Figment
-Figment shares the work your whole team is doing with basic search, filtered views for tags, and more. It is run as a Google Sheet, which allows it to work within most organizations, and can be deployed by an individual on the team.
+Figment shares the work from your whole team with basic search, filtered views for tags, and more.
+It is a fancy Google Sheet with scripts, which allows it to work within most organizations, and can be deployed by an individual on the team.
 
 ![Screenshot](https://github.com/alcor/figment/blob/master/img/screenshot.png?raw=true)
 
 
 ## Requirements
 - Figma
-- Gsuite (Google Sheets + App Script)
+- Gsuite (Google Sheets + Scripts)
 
 ## Initial Setup
 
@@ -19,9 +20,9 @@ Figment shares the work your whole team is doing with basic search, filtered vie
 - Create a copy of the [Figment Master Sheet](https://docs.google.com/spreadsheets/d/1DGcuIwNQIi2kulaafiv-73OwpkgvsKvrXTv5H4Nm624/copy)
 
 ### 2. Setting Properties
-- Run Setup from the Figment menu
-- Add a few teams/projects to the Sources sheet (one per row.)
-- Sync Figment Data from the Figment menu
+- Run Setup from the Figment menu (you'll need a [token from figma](https://www.figma.com/settings))
+- Add a few teams/projects to the Sources sheet (one per row.) - just copy a link to those teams' pages in Figma
+- Choose Sync Figment Data from the Figment menu
 
 ### 3. Deploying the website
 - Open the script editor via Tools ▶ Script Editor   
@@ -31,12 +32,7 @@ Figment shares the work your whole team is doing with basic search, filtered vie
 - Update
 - Approve any permissions dialogs which may appear
 
-### 4. Setting sources to update automatically
-- In the Script Editor (Tools ▶ Script Editor), choose (Edit ▶ Current Project Triggers)
-- Choose + Add Trigger in the lower Right
-- Set up a trigger to run "getLatestFigmentData" automatically every hour (or as you see fit)
-
-### 5. Getting Updates
+### 4. Getting Updates
 - Install Google Apps Script GitHub Assistant https://chrome.google.com/webstore/detail/google-apps-script-github/lfjcgcmkmjjlieihflfhjopckgpelofo
 - Choose Login SCM
 - Click gear, choose Manage manifest file
