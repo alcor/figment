@@ -144,7 +144,7 @@ display:none;
   display: -ms-grid;
   display: grid;
   grid-template-columns: repeat(auto-fill,minmax(300px,1fr));
-  grid-gap: 1em 3em;
+  grid-gap: 2em 3em;
   
 }
 
@@ -173,12 +173,12 @@ display:none;
   flex: 1 0 auto;
   background-repeat: no-repeat;
   box-sizing:border-box;  
-    box-shadow:  0 1px 3px rgba(0,0,0,0.08), inset 0 2px 4px rgba(0,0,0,0.12);;
-
+  box-shadow:  0 1px 3px rgba(0,0,0,0.08), inset 0 2px 4px rgba(0,0,0,0.12);
+  
 }
 
 .file:not(:hover) .thumbnail {
-  transition: transform 0.2s ease-out, opacity 1.0s;
+  transition: opacity 1.0s;
 }
 
 .file:not(:hover) .thumbnail {
@@ -188,15 +188,21 @@ display:none;
   margin-left:-100%;
   opacity:0.0;
   transform:translateY(0);
-
+  pointer-events:none;
 }
-
+.thumbnail.vertical {
+  background-size: auto 100%;
+  background-position:center top;
+}
 .thumbnail.cover{
   margin-left:0;
   background-size:contain;
   background-position:center center ;
 }
 
+.file:hover .thumbnail.cover{
+transform:scale(1.01);
+}
 .thumbnail:not(.cover) {
   background-color:gray;
 }
@@ -209,10 +215,10 @@ display:none;
 .thumbnail-container[index="4"] .thumbnail:nth-child(4),
 .thumbnail-container[index="5"] .thumbnail:nth-child(5),
 .thumbnail-container[index="6"] .thumbnail:nth-child(6) {
- opacity:1.0;
+   opacity:1.0;
    transform:translateY(0);
    transition-delay:0s;
-   
+   pointer-events:all;
 
 }
 
@@ -291,11 +297,12 @@ margin-left:-.25em;
 .file .tag {
   opacity:0.54;
   border-radius:1px;
-  padding:0 0.5em;
+  padding:0 0.25em;
   font-size:9px;
   text-transform:uppercase;
   letter-spacing:0.5px;
-  margin-right: 0.5em;
+  margin-right: 0.75em;
+  margin-left:-0.25em;
   cursor:default;
   white-space: nowrap;
   margin-bottom:0.25em;

@@ -1,11 +1,12 @@
 //
-// Figment 1.0.4
+// Figment 1.1.0
 //
 // see https://github.com/alcor/figment/ for information on
 // initial setup and how to update this script to the latest version 
 //
 
 var scriptProperties = PropertiesService.getScriptProperties();
+var lock = LockService.getScriptLock();
 var sheetURL = scriptProperties.getProperty("sheet_url");
 if (sheetURL) SpreadsheetApp.setActiveSpreadsheet(SpreadsheetApp.openByUrl(url));
 
@@ -14,8 +15,8 @@ function getLatestFigmentData() { return getLatestFigmentData_(); }
 function onOpen() {
   var ui = SpreadsheetApp.getUi();
   ui.createMenu('🅵 Figment')
-    .addItem('🔄 Sync Figment Data', 'getLatestFigmentData')
     .addItem('⚙️ Run Setup', 'initialSetup_')
+    .addItem('🔄 Sync Figment Data', 'getLatestFigmentData')
     .addToUi();
 }
 
@@ -65,13 +66,13 @@ var COLUMN = {
   TEAM: {index:4, name:"Team"},
   PROJECT: {index:5, name:"Project"},
   UPDATED: {index:6, name:"Updated"},
-  COLOR: {index:7, name:"Color"},
-  PREVIEW: {index:8, name:"Preview"},
-  EDITOR: {index:9, name:"Editor"},
-  EDITOR_AVATAR: {index:10, name:"Editor Avatar"},
-  AUTHOR: {index:11, name:"Author"},
-  AUTHOR_AVATAR: {index:12, name:"Author Avatar"},
-  CREATED: {index:13, name:"Created"},
+  METADATA: {index:7, name:"Metadata"},
+  PREVIEW: {index:8, name:""},
+  EDITOR: {index:9, name:""},
+  EDITOR_AVATAR: {index:10, name:""},
+  AUTHOR: {index:11, name:""},
+  AUTHOR_AVATAR: {index:12, name:""},
+  CREATED: {index:13, name:""},
   VOTES: {index:14, name:"Votes"},
   OPENS: {index:15, name:"Opens"},
   RELEVANCE: {index:16, name:"Relevance"}
@@ -82,13 +83,30 @@ var fileColumns = Object.values(COLUMN).sort((a,b) => a.index > b.index).map(c =
 function initialSetup_() {
   createAllSheets_();
   
-  var token;// = scriptProperties.getProperty("figma_token");
+  var token = scriptProperties.getProperty("figma_token");
   if (token == undefined) {
     requestToken_();
   }
   
+  installTrigger()
 }
   
+function installTrigger() {
+  if (ScriptApp.getProjectTriggers().length < 1) {
+    ScriptApp.newTrigger('getLatestFigmentData')
+        .timeBased()
+        .everyHours(1)
+        .nearMinute(0)
+        .create();
+  }
+}
+
+function removeTrigger() {
+  ScriptApp.getProjectTriggers().forEach(function(trigger){
+    ScriptApp.deleteTrigger(trigger);
+  });
+}
+
 function requestToken_() {
 
   var ui = SpreadsheetApp.getUi(); // Same variations.
@@ -139,6 +157,8 @@ function getSourcesSheet_() {
 
 // Update the list of sources, fetching latest files from each
 function updateSources_() {
+
+  lock.waitLock(10000);
   var sourcesSheet = getSourcesSheet_();
   var sourceData = sourcesSheet.getDataRange().getValues();
 
@@ -149,8 +169,12 @@ function updateSources_() {
   
   var today = new Date()
   var priorDate = new Date().setDate(today.getDate() - 31)
-  
+  var teamCount = 0;
+
   for ( i = 1 ; i < sourceData.length; i++){
+    sourcesSheet.getRange(i + 1, 2).setBackground("yellow")
+    SpreadsheetApp.flush();
+
     var count = 0;
     var url = sourceData[i][0];
     if (!url.length) break;
@@ -182,6 +206,7 @@ function updateSources_() {
           if (dateModified > priorDate) {          
             var newRow = [f.key, f.name, f.last_modified, f.thumbnail_url, teamName, projectName];
             fileRows.push(newRow);
+            teamCount++;
           }
         });
     }); 
@@ -197,9 +222,12 @@ function updateSources_() {
  
     sourcesSheet.getRange(i + 1, 2).setValue(date);
     sourcesSheet.getRange(i + 1, 3).setValue(count);
+    sourcesSheet.getRange(i + 1, 2).setBackground(null);
+
   }
   
   filesSheet.sort(3, false);
+  lock.releaseLock();
 }
 
 function getLatestFigmentData_() {
@@ -219,6 +247,7 @@ function updateCache_() {
 
 function updateFiles() { updateFiles_() };
 function updateFiles_() {
+  lock.waitLock(10000);
   var filesSheet = getFilesSheet_();
   var filesData = filesSheet.getDataRange().getValues();
   var keys = filesData.map(k => k[0]);
@@ -226,36 +255,44 @@ function updateFiles_() {
     updateFile_(filesData[i], i, filesSheet);
     SpreadsheetApp.flush();
   }
+  lock.releaseLock();
 }
 function updateFile_(file, i, filesSheet) {
   var key = file[COLUMN.KEY.index];
   var fileUpdated = file[COLUMN.MODIFIED.index];
   var dateCreated = file[COLUMN.CREATED.index];
   var metadataUpdated  = file[COLUMN.UPDATED.index]
+  var metadata = file[COLUMN.METADATA.index]
+  
+  try {
+    metadata = JSON.parse(metadata);
+  } catch (e) {
+    metadata = {};
+  }
   
   if (!metadataUpdated.length ||  fileUpdated > metadataUpdated) {
     Logger.log("Updating " + key);
     try {
       filesSheet.getRange(i + 1, COLUMN.UPDATED.index + 1).setBackground("yellow")
        SpreadsheetApp.flush();
-
-      var metadata = [fileUpdated]
-      metadata = metadata.concat(getFramePreviews_(key))
-
+       
+       metadata = {...metadata, ...getFramePreviews_(key)} // merge results
+      
       var versions = getVersions_(key);
       var lastVersion = versions.shift();
-      metadata = metadata.concat([lastVersion.user.handle, lastVersion.user.img_url]);
+      metadata.edited = {id:lastVersion.user.handle, img:lastVersion.user.img_url, ts:lastVersion.created_at};
+      metadata.vcount = versions.count;
       
-
-      if (dateCreated == undefined || dateCreated == "") {
+      //metadata = metadata.concat([lastVersion.user.handle, lastVersion.user.img_url]);
+      
+      if (metadata.created == undefined) {
         var firstVersion = getFirstVersion_(key);
-        metadata = metadata.concat([firstVersion.user.handle, firstVersion.user.img_url, firstVersion.created_at]);
-        Logger.log("Getting first version" + JSON.stringify(metadata));
+        metadata.created = {id:firstVersion.user.handle, img:firstVersion.user.img_url, ts:firstVersion.created_at};
       }  
       
-      filesSheet.getRange(i + 1, COLUMN.UPDATED.index + 1, 1, metadata.length).setValues([metadata]);
+      filesSheet.getRange(i + 1, COLUMN.UPDATED.index + 1, 1, 2).setValues([[fileUpdated, JSON.stringify(metadata)]]);
       filesSheet.getRange(i + 1, COLUMN.UPDATED.index + 1).setBackground(null);
-      filesSheet.getRange(i + 1, 1).setNote(null);
+      filesSheet.getRange(i + 1, COLUMN.UPDATED.index + 1).setNote(null);
 
     } catch (e) {
       filesSheet.getRange(i + 1, 1).setNote(e.name + ": " + e.message + "\n\n" + e.stack);
@@ -307,15 +344,16 @@ function getFramePreviews_(key) {
   if (fileInfo == undefined) fileInfo = callFigmaAPI_("https://api.figma.com/v1/files/" + key + "?depth=1")
   
   var document = fileInfo.document;
+  if (!document) return {};
   
-  if (!document) return ["magenta", ""];
   var page0 = document.children[0];
   var frame0 = page0.children[0];
   var background = page0.backgroundColor;
   var color = "rgba(" + [Math.round(background.r * 255), Math.round(background.g * 255), Math.round(background.b * 255), background.a].join(",") + ")";
   var frameURL = "";
   var defaultCanvasId;
-  var thumbnailIds = [];
+  var thumbnails = [];
+  var heroes = [];
   document.children.forEach(canvas => {
     var name = canvas.name;
     var utilityCanvas = name.match(canvasIgnoreRE);
@@ -327,33 +365,39 @@ function getFramePreviews_(key) {
     if (utilityCanvas) return;
     
     canvas.children.forEach(frame => {
-      if (thumbnailIds.length > 4) return;
+      if (frame.type != "FRAME" && frame.type != "INSTANCE" && frame.type != "COMPONENT") return;
+      
+      var isHero = frame.name.includes("#figment");
       var box = frame.absoluteBoundingBox;
-      if (frame.type != "FRAME") return;
-      if (box.width < 360) return;
-      if (box.height < 720) return;
+
+      if (!isHero) { 
+        if (heroes.length) return;
+        if (thumbnails.length > 4) return;
+        if (frame.name.startsWith("Frame ")) return;
+        if (box.width < 360) return;
+        if (box.height < 720) return;
+        if ((box.width / box.height) > 3) return;
+        if ((box.height / box.width) > 3) return;
+      }
       
-      if ((box.width / box.height) > 3) return;
-      if ((box.height / box.width) > 3) return;
+      (isHero ? heroes : thumbnails).push({id:frame.id, w:box.width, h:box.height, name:frame.name});
       
-      thumbnailIds.push(frame.id);
-    
     });
     
   });
   
+  var metadata = {color:color}
   
-  
-  if (thumbnailIds.length > 0) {
-     var response = callFigmaAPI_("https://api.figma.com/v1/images/" + key + (thumbnailIds ? "?ids=" + thumbnailIds.join(",") : ""));
+  thumbnails = heroes.length ? heroes : thumbnails;
+  if (thumbnails.length > 0) {
+     var response = callFigmaAPI_("https://api.figma.com/v1/images/" + key + "?ids=" + thumbnails.map(t => t.id).join(","));
      
-     var images = [];
-     thumbnailIds.forEach(id => {
-       images.push(response.images[id]);
+     thumbnails.forEach(t => {
+       t.img = (response.images[t.id]);
      });
-     frameURL = images.join(",");
+     metadata.imgs = thumbnails;
   }
-  return [color, frameURL];
+  return metadata;
 }
 
 function getFigmaFramePreview_(url) {

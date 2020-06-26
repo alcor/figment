@@ -52,7 +52,14 @@ function updateSearchIndex() {
     var team = row[COLUMN.TEAM.index];
     if (team.length) teams[team] = team;
 
-    var terms = [row[COLUMN.TITLE.index], "#" + tags.join(" #"), "@" + row[COLUMN.AUTHOR.index],  "@" + row[COLUMN.EDITOR.index]]
+    var metadata = row[COLUMN.METADATA.index];
+    row.metadata = metadata = metadata.startsWith("{") ? JSON.parse(metadata) : {};
+
+
+    var terms = [row[COLUMN.TITLE.index], "#" + tags.join(" #")]
+    if (metadata.created) terms.push("@" + metadata.created.id);
+    if (metadata.edited) terms.push("@" + metadata.edited.id);
+    
     row.index = terms.join("\n").toLowerCase();
   });
   cachedResponse.teams = Object.keys(teams).sort();
@@ -231,7 +238,7 @@ function render(response) {
   var thumbnails = [];
   var teamThumbnails = [];
   var currentTeam = window.localStorage.getItem("my-team");
-  if (currentTeam == "") currentTeam = undefined;
+  if (currentTeam == undefined) currentTeam = "*";
   
   var data = response.data;
 
@@ -258,22 +265,24 @@ function render(response) {
     console.log(url);
     var title = row[COLUMN.TITLE.index]
     var thumbnail = row[COLUMN.THUMBNAIL.index]
-    var previews = row[COLUMN.PREVIEW.index].split(",");
+    var metadata = row.metadata;
+    
     var team = row[COLUMN.TEAM.index];
     var project = row[COLUMN.PROJECT.index]
     var tags = team + ", " + project
 
     tags = tags.split(tagSplitRE);
     
-    var bgcolor = row[COLUMN.COLOR.index];
+    var bgcolor = metadata.color;
     if (bgcolor == "rgba(229,229,229,1)") bgcolor = undefined;
     
-    var editor = row[COLUMN.EDITOR.index];
-    var editor_img = row[COLUMN.EDITOR_AVATAR.index];
+    var editor = metadata?.edited?.id//row[COLUMN.EDITOR.index];
+    var editor_img = metadata?.edited?.img//row[COLUMN.EDITOR_AVATAR.index];
 
-    var author = row[COLUMN.AUTHOR.index];
-    var author_img = row[COLUMN.AUTHOR_AVATAR.index];
+    var author = metadata?.created?.id //row[COLUMN.AUTHOR.index];
+    var author_img = metadata?.created?.img //row[COLUMN.AUTHOR_AVATAR.index];
 
+    var frames = metadata.imgs;
     var modified = new Date(row[COLUMN.MODIFIED.index]);
     var votes = row[COLUMN.VOTES.index];
     var opens = row[COLUMN.OPENS.index];
@@ -301,8 +310,15 @@ function render(response) {
     
     var previewEls = [];
     
-    previews.forEach(image => {
-      if (image.length > 0 ) previewEls.push(m("div", {className:"thumbnail", style:"background-image:url('" + image + "')"}));
+    frames?.forEach(frame => {
+      var vertical = frame.h > frame.w * 2;
+      previewEls.push(m("a", {
+        className:"thumbnail" + (vertical ? " vertical" : ""),
+        style:"background-image:url('" + frame.img + "');",
+        target:"_blank",
+        title:frame.name,
+        href:url + "?node-id=" + frame.id
+        }));
     });
     
     
@@ -321,8 +337,8 @@ function render(response) {
           tagEls,
         ),
         m("div", {className:"avatars"},
-          author ? m("div", {className:"avatar", style:"background-image:url('" + author_img + "')"}) : undefined,
-          m("div", {className:"avatar", style:"background-image:url('" + editor_img + "')"}),
+          m("div", {className:"avatar", style:"background-image:url('" + editor_img + "')", onclick: () => { return filterByAuthor(editor) }}),
+          author ? m("div", {className:"avatar", style:"background-image:url('" + author_img + "')", onclick: () => { return filterByAuthor(author) }}) : undefined,
         ),
         m("div", {className:"title"}, m("a", {href:url}, title)),
         m("span", {className:"byline"}, 
@@ -358,9 +374,8 @@ function render(response) {
   
   var teamOptions = response.teams.map(t => m("option", {value:t, selected:t==currentTeam}, t));
   teamOptions.unshift(m("option", {disabled:"disabled"}, "──────────"))
-  teamOptions.unshift(m("option", {value:"", selected:currentTeam == undefined}, "Team Favorites"))
-  teamOptions.push(m("option", {disabled:"disabled"}, "──────────"))
-  teamOptions.push(m("option", {value:"*", selected:currentTeam == "*"}, "Everything"))
+  teamOptions.unshift(m("option", {value:"Favorites", selected:currentTeam == "Favorites"}, "Team Favorites"))
+  teamOptions.unshift(m("option", {value:"*", selected:currentTeam == "*"}, "Everything"))
   
   
   var filter = m("div", {id:"team-container"},
@@ -486,11 +501,9 @@ fetch();
 var startingThumbnailIndex = -1;
 var slideshowSkipCount = 12;
 function slideshow() {
-    startingThumbnailIndex = (startingThumbnailIndex + 1) % slideshowSkipCount;
-  console.log("slide", startingThumbnailIndex);
+  startingThumbnailIndex = (startingThumbnailIndex + 1) % slideshowSkipCount;
   var thumbnails = document.getElementsByClassName("thumbnail-container");
 
-  console.log(startingThumbnailIndex);
   var i = 0;
   for (let thumbnail of thumbnails) {
       if ((i % slideshowSkipCount) == startingThumbnailIndex) {
@@ -502,7 +515,13 @@ function slideshow() {
   }
 }
 
-setInterval(slideshow, 5000);
+setTimeout(() => {
+  for (var i = 0; i < 6; i++) {
+    setTimeout(slideshow, i * 200);
+  }
+  setInterval(slideshow, 5000);
+}, 5000)
+
 
 
 
