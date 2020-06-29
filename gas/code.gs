@@ -6,6 +6,9 @@
 //
 
 var scriptProperties = PropertiesService.getScriptProperties();
+var figma_server = scriptProperties.getProperty("figma_server") || "www.figma.com";
+var figma_api = scriptProperties.getProperty("figma_api") || "api.figma.com";
+
 var lock = LockService.getScriptLock();
 var sheetURL = scriptProperties.getProperty("sheet_url");
 if (sheetURL) SpreadsheetApp.setActiveSpreadsheet(SpreadsheetApp.openByUrl(url));
@@ -35,6 +38,7 @@ function doGet(e) {
     template.COLUMN_KEYS = JSON.stringify(COLUMN);
     template.omit_tags = scriptProperties.getProperty("omit_tags");
     template.slack_team = scriptProperties.getProperty("slack_team");
+    template.figma_server = scriptProperties.getProperty("figma_server") || "www.figma.com";
     output = template.evaluate();
   }
   
@@ -155,7 +159,7 @@ function updateSources_() {
   var sourcesSheet = getSourcesSheet_();
   var sourceData = sourcesSheet.getDataRange().getValues();
 
-  var re = /https:\/\/www.figma.com\/(?:files\/\d+\/)?(team|project|file)\/([^\/]+)\/.*/  
+  var re = /https:\/\/(?:[\w\.-]+\.)?figma.com\/(?:files\/\d+\/)?(team|project|file)\/([^\/]+)\/.*/  
   var filesSheet = getFilesSheet_()
   var keys = filesSheet.getRange("A:A").getValues();
   keys = keys.map(k => k[0]);
@@ -180,19 +184,20 @@ function updateSources_() {
     var projects = [];
     var teamName = "";
     if (type == "team") {
-      var results = getFigmaProjects_(id);
+      var results = callFigmaAPI_("/v1/teams/" + id + "/projects");
       teamName = results.name;
       projects = results.projects.map(p => p.id)
     } else if (type == "project") {
       projects.push(id)
     } if (type == "file") {
-      var f = callFigmaAPI_("https://api.figma.com/v1/files/" + id + "?depth=1");
+      var f = callFigmaAPI_("/v1/files/" + id + "?depth=1");
       fileRows.push([f.key, f.name, f.last_modified, f.thumbnail_url]);
       continue;
     }
     
     projects.forEach(p => { 
-      var data = getFigmaFiles_(p)
+      var data = callFigmaAPI_("/v1/projects/" + p + "/files");
+  
       var projectName = data.name;
         data.files.forEach(f => {
           var dateModified = new Date(f.last_modified);
@@ -320,21 +325,21 @@ function getUrlParameter_(name, url) {
 };
 
 function getVersions_(key) {
-  var versionInfo = callFigmaAPI_("https://api.figma.com/v1/files/" + key + "/versions");
+  var versionInfo = callFigmaAPI_("/v1/files/" + key + "/versions");
   if (!versionInfo.versions || !versionInfo.versions.length) return ["No Versions",""]
   return versionInfo.versions; //[v.user.handle, v.user.img_url];
 }
 
 function getFirstVersion_(key) {
-  var versionInfo = callFigmaAPI_("https://api.figma.com/v1/files/" + key + "/versions?page_size=1&before=0");
+  var versionInfo = callFigmaAPI_("/v1/files/" + key + "/versions?page_size=1&before=0");
   if (!versionInfo.versions || !versionInfo.versions.length) return undefined;
   return versionInfo.versions.shift();
 }
 
 var canvasIgnoreRE = /^(cover|COVER|Cover|Title|title|--+|––+|——+)/i
 function getFramePreviews_(key) {
-  var fileInfo = callFigmaAPI_("https://api.figma.com/v1/files/" + key + "?depth=2")
-  if (fileInfo == undefined) fileInfo = callFigmaAPI_("https://api.figma.com/v1/files/" + key + "?depth=1")
+  var fileInfo = callFigmaAPI_("/v1/files/" + key + "?depth=2")
+  if (fileInfo == undefined) fileInfo = callFigmaAPI_("/v1/files/" + key + "?depth=1")
   if (fileInfo == undefined) return {};
 
   var document = fileInfo.document;
@@ -384,7 +389,7 @@ function getFramePreviews_(key) {
   
   thumbnails = heroes.length ? heroes : thumbnails;
   if (thumbnails.length > 0) {
-     var response = callFigmaAPI_("https://api.figma.com/v1/images/" + key + "?ids=" + thumbnails.map(t => t.id).join(","));
+     var response = callFigmaAPI_("/v1/images/" + key + "?ids=" + thumbnails.map(t => t.id).join(","));
      
      thumbnails.forEach(t => {
        t.img = (response.images[t.id]);
@@ -399,32 +404,11 @@ function getFigmaFramePreview_(url) {
   var match = url.match(re)
   var key = match ? match[3] : url;
   var ids = getUrlParameter_("node-id", url)
-  var infoUrl = "https://api.figma.com/v1/images/" + key + (ids ? "?ids=" + ids : "");
-  Logger.log(infoUrl)
-  var response = JSON.parse(UrlFetchApp.fetch(infoUrl, {headers: {"X-FIGMA-TOKEN": scriptProperties.getProperty("figma_token")}}));
-
-  Logger.log(response)
+  var response = callFigmaAPI_("/v1/images/" + key + (ids ? "?ids=" + ids : ""))
   return response.images[ids]
 }
 
-
-function getFigmaProjects_(teamId) {
-  var infoUrl = "https://api.figma.com/v1/teams/" + teamId + "/projects";
-  var response = UrlFetchApp.fetch(infoUrl, {headers: {"X-FIGMA-TOKEN": scriptProperties.getProperty("figma_token")}});
-  var json = response.getContentText();
-  var data = JSON.parse(json);
-  return data;
-}
  
-function getFigmaFiles_(projectId, prefix) {
-  var infoUrl = "https://api.figma.com/v1/projects/" + projectId + "/files";
-  var response = UrlFetchApp.fetch(infoUrl, {headers: {"X-FIGMA-TOKEN": scriptProperties.getProperty("figma_token")}});
-  var json = response.getContentText();
-  var data = JSON.parse(json);
-  return data;
-  //return data.files.map(f => [f.key, f.name, f.last_modified, f.thumbnail_url, prefix, data.name]);
-}
-
 function getFigmaInfo_(url) {
   var re = /https:\/\/([\w\.-]+\.)?figma.com\/(file|proto)\/([0-9a-zA-Z]{22,128})(?:\/.*)?$/
   var match = url.match(re)
@@ -433,11 +417,11 @@ function getFigmaInfo_(url) {
   if (!match) return;
   var key = match[3];
   var id = undefined;
-  var infoUrl = "https://api.figma.com/v1/files/" + key + "?depth=1";  
-  return callFigmaAPI_(infoUrl);
+  return callFigmaAPI_("/v1/files/" + key + "?depth=1");
 }
 
-function callFigmaAPI_(url) {
+function callFigmaAPI_(path) {
+  var url = "https://" + figma_api + path
   try {
     var response = UrlFetchApp.fetch(url, {headers: {"X-FIGMA-TOKEN": scriptProperties.getProperty("figma_token")}});
     var json = response.getContentText();

@@ -261,7 +261,10 @@ function render(response) {
   data.forEach(function(row) {
     var key = row[COLUMN.KEY.index]
     if (!key) return;
-    var url = "https://www.figma.com/file/" + key;
+    
+    var url = "https://<?!= figma_url ?>/file/" + key;
+    var nativeURL = "figma://file/" + key;
+    
     console.log(url);
     var title = row[COLUMN.TITLE.index]
     var thumbnail = row[COLUMN.THUMBNAIL.index]
@@ -306,7 +309,6 @@ function render(response) {
     
     if (author == editor) author = undefined;
     
-    var nativeURL = url.replace("https://www.figma.com/", "figma://");
     
     var previewEls = [];
     
