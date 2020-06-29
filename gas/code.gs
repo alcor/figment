@@ -38,7 +38,7 @@ function doGet(e) {
     template.COLUMN_KEYS = JSON.stringify(COLUMN);
     template.omit_tags = scriptProperties.getProperty("omit_tags");
     template.slack_team = scriptProperties.getProperty("slack_team");
-    template.figma_server = scriptProperties.getProperty("figma_server") || "www.figma.com";
+    template.figma_host = scriptProperties.getProperty("figma_server") || "www.figma.com";
     output = template.evaluate();
   }
   

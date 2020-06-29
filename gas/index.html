@@ -11,7 +11,7 @@
 <script>
 
 var COLUMN = <?!= COLUMN_KEYS ?>;
-var omit_tags = "<?!= omit_tags ?>"
+var omit_tags = "<?= omit_tags ?>"
 
 var m = function createElement(type, attrs, ...children) {
   var node = document.createElement(type);
@@ -262,7 +262,7 @@ function render(response) {
     var key = row[COLUMN.KEY.index]
     if (!key) return;
     
-    var url = "https://<?!= figma_url ?>/file/" + key;
+    var url = "https://<?= figma_host ?>/file/" + key;
     var nativeURL = "figma://file/" + key;
     
     console.log(url);
@@ -386,7 +386,7 @@ function render(response) {
   
   var content = m("div", {id:"content"},    
     subheader,
-    activeSearch ?  "" : filter,
+    (activeSearch || response.teams.length < 5) ?  "" : filter,
     m("div", {id:"file-content"},
        teamThumbnails.length > 0 ? 
        m("div", {id:"team-files", className:"files-container"},
