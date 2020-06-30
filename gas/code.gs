@@ -189,10 +189,9 @@ function updateSources_() {
       projects = results.projects.map(p => p.id)
     } else if (type == "project") {
       projects.push(id)
-    } if (type == "file") {
+    } else if (type == "file") {
       var f = callFigmaAPI_("/v1/files/" + id + "?depth=1");
-      fileRows.push([f.key, f.name, f.last_modified, f.thumbnail_url]);
-      continue;
+      fileRows.push([id, f.name, f.lastModified, f.thumbnailUrl]);
     }
     
     projects.forEach(p => { 

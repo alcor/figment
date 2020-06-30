@@ -313,7 +313,7 @@ function render(response) {
     var previewEls = [];
     
     frames?.forEach(frame => {
-      var vertical = frame.h > frame.w * 2;
+      var vertical = (frame.h > frame.w * 1.77) && frame.w <= 480;
       previewEls.push(m("a", {
         className:"thumbnail" + (vertical ? " vertical" : ""),
         style:"background-image:url('" + frame.img + "');",
