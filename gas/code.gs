@@ -1,5 +1,5 @@
 //
-// Figment 1.1.1
+// Figment 1.1.2
 //
 // see https://github.com/alcor/figment/ for information on
 // initial setup and how to update this script to the latest version 
@@ -370,7 +370,7 @@ function getFramePreviews_(key) {
 
       if (!isHero) { 
         if (heroes.length) return;
-        if (thumbnails.length > 4) return;
+        if (thumbnails.length > 5) return;
         if (frame.name.startsWith("Frame ")) return;
         if (box.width < 360) return;
         if (box.height < 720) return;

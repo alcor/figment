@@ -208,6 +208,8 @@ console.log("enter", e)
 function thumbnailExit(e) {
   var target = e.target.closest(".thumbnail-container");
   target.removeAttribute("index");
+    target.style.transform = "";
+
 }
 
 function thumbnailMove(e) {
@@ -223,6 +225,8 @@ function thumbnailMove(e) {
     target.setAttribute("index", index);
     target.index = index;
   }
+  var offset = (index - 2) - (count / 2);
+  target.style.transform = "translateY(-3px) rotate(" + (offset/2) + "deg) translateX(" + (offset * 3)  + "px)" 
 }
 
 function render(response) {
@@ -519,7 +523,7 @@ function slideshow() {
 
 setTimeout(() => {
   for (var i = 0; i < 12; i++) {
-    setTimeout(slideshow, i * 200);
+    //setTimeout(slideshow, i * 100);
   }
   setInterval(slideshow, 5000);
 }, 5000)
