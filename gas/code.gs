@@ -39,6 +39,7 @@ function doGet(e) {
     template.omit_tags = scriptProperties.getProperty("omit_tags");
     template.slack_team = scriptProperties.getProperty("slack_team");
     template.figma_host = scriptProperties.getProperty("figma_server") || "www.figma.com";
+    template.default_team = scriptProperties.getProperty("default_team") || "*";
     output = template.evaluate();
   }
   
@@ -196,9 +197,12 @@ function updateSources_() {
     
     projects.forEach(p => { 
       var data = callFigmaAPI_("/v1/projects/" + p + "/files");
-  
+    
       var projectName = data.name;
-        data.files.forEach(f => {
+      
+      if (projectName.includes("#hidden")) return;
+      
+      data.files.forEach(f => {
           var dateModified = new Date(f.last_modified);
           if (dateModified > priorDate) {          
             var newRow = [f.key, f.name, f.last_modified, f.thumbnail_url, teamName, projectName];
@@ -209,6 +213,8 @@ function updateSources_() {
     }); 
     
     fileRows.forEach(fileRow => {
+      if (fileRow[1].includes("#hidden")) return;
+
       var i = keys.indexOf(fileRow[0]); // Match key and reuse row
       if (i < 0) {
         i = filesSheet.getLastRow();

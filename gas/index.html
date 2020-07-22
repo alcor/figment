@@ -12,6 +12,7 @@
 
 var COLUMN = <?!= COLUMN_KEYS ?>;
 var omit_tags = "<?= omit_tags ?>"
+var default_team = "<?= default_team ?>"
 
 var m = function createElement(type, attrs, ...children) {
   var node = document.createElement(type);
@@ -242,7 +243,7 @@ function render(response) {
   var thumbnails = [];
   var teamThumbnails = [];
   var currentTeam = window.localStorage.getItem("my-team");
-  if (currentTeam == undefined) currentTeam = "*";
+  if (currentTeam == undefined) currentTeam = default_team;
   
   var data = response.data;
 
@@ -254,7 +255,7 @@ function render(response) {
     
     //activeAuthor = people.shift();
   } else {
-    data = data.filter(item => item.rating >= 1 || item[COLUMN.TEAM.index] == currentTeam || currentTeam == "*" );
+    data = data.filter(item => item.rating >= 2 || item[COLUMN.TEAM.index] == currentTeam || currentTeam == "*" );
   }
   
   console.log(response);
@@ -273,6 +274,8 @@ function render(response) {
     var title = row[COLUMN.TITLE.index]
     var thumbnail = row[COLUMN.THUMBNAIL.index]
     var metadata = row.metadata;
+    
+    if (title.includes("#hidden")) return;
     
     var team = row[COLUMN.TEAM.index];
     var project = row[COLUMN.PROJECT.index]
@@ -357,7 +360,7 @@ function render(response) {
       )
     );
     
-    if (!activeSearch && team == currentTeam && teamThumbnails.length < 8) {
+    if (!activeSearch && team == currentTeam && teamThumbnails.length < 12) {
       teamThumbnails.push(thumbnail)
     } else {
       thumbnails.push(thumbnail);
@@ -381,7 +384,10 @@ function render(response) {
   var teamOptions = response.teams.map(t => m("option", {value:t, selected:t==currentTeam}, t));
   teamOptions.unshift(m("option", {disabled:"disabled"}, "──────────"))
   teamOptions.unshift(m("option", {value:"Favorites", selected:currentTeam == "Favorites"}, "Team Favorites"))
-  teamOptions.unshift(m("option", {value:"*", selected:currentTeam == "*"}, "Everything"))
+
+
+  teamOptions.push(m("option", {disabled:"disabled"}, "──────────"))
+teamOptions.push(m("option", {value:"*", selected:currentTeam == "*"}, "Everything"))
   
   
   var filter = m("div", {id:"team-container"},
