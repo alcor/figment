@@ -213,7 +213,7 @@ function updateSources_() {
     }); 
     
     fileRows.forEach(fileRow => {
-      if (fileRow[1].includes("#hidden")) return;
+      //if (fileRow[1].includes("#hidden")) return;
 
       var i = keys.indexOf(fileRow[0]); // Match key and reuse row
       if (i < 0) {
