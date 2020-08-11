@@ -160,7 +160,7 @@ function updateSources_() {
   var sourcesSheet = getSourcesSheet_();
   var sourceData = sourcesSheet.getDataRange().getValues();
 
-  var re = /https:\/\/(?:[\w\.-]+\.)?figma.com\/(?:files\/\d+\/)?(team|project|file)\/([^\/]+)\/.*/  
+  var re = /https:\/\/(?:[\w\.-]+\.)?figma.com\/(?:files\/[^\/]+\/)?(team|project|file)\/([^\/]+)\/.*/  
   var filesSheet = getFilesSheet_()
   var keys = filesSheet.getRange("A:A").getValues();
   keys = keys.map(k => k[0]);
