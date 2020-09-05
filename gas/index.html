@@ -14,6 +14,7 @@ var COLUMN = <?!= COLUMN_KEYS ?>;
 var omit_tags = "<?= omit_tags ?>"
 var default_team = "<?= default_team ?>"
 
+// Core create-element function
 var m = function createElement(type, attrs, ...children) {
   var node = document.createElement(type);
   for (var prop in attrs) {
@@ -34,6 +35,7 @@ var m = function createElement(type, attrs, ...children) {
 
 var cachedResponse;
 
+// Get data from spreadsheet
 function fetch() {
   var ignoreCache = true;
   console.log("Fetching");
@@ -41,7 +43,7 @@ function fetch() {
   google.script.run.withSuccessHandler(gotData).getData(ignoreCache);
 }
 
-
+// Create a local search index
 var tagSplitRE = / ?(?:,|\[|\]| - ) ?/
 function updateSearchIndex() {
   var teams = [];
@@ -66,6 +68,7 @@ function updateSearchIndex() {
   cachedResponse.teams = Object.keys(teams).sort();
 }
 
+// Parse data
 function gotData(response) {
   cachedResponse = JSON.parse(response);
   var headers = cachedResponse.data.shift();
@@ -88,6 +91,7 @@ var activeAuthor;
 var allUniqueAuthors = [];
 var activeSearch;
 
+// Search callback
 function setSearch(value, incremental) {
   var search = document.getElementById("search")
   activeSearch = search.value = value || ""
@@ -103,31 +107,17 @@ function setSearch(value, incremental) {
   document.getElementById("search").focus();
 }
 
+// Tag click callback
 function filterByTag(tag) {
-  //google.script.history.push({}, undefined, tag);
   setSearch("#" + tag)
-  //activeTag = tag;
   render();
   return false;
 }
 
+// Author click callback
 function filterByAuthor(username) {
   setSearch("@" + username)
   render();
-  return false;
-}
-
-function clearTag() {
-  google.script.history.push({}, undefined, "");
-  activeTag = null;
-  render();
-  return false;
-}
-
-function clearAuthor() {
-  activeAuthor = null;
-  cachedAuthor = null;
-  render()
   return false;
 }
 
@@ -146,22 +136,18 @@ google.script.history.setChangeHandler(function (e) {
 });
 
 function searchChanged(e) {
-  // console.log("e", e, e.target.value, e.target.data);
   setSearch(e.target.value, true);
 }
 
+// Set up main UI hierarchy
 function setup() {
-
   var nav = m("div", {id:"nav"}, 
       m("h1", {},
       m("div", {id:"logo", onclick:e => setSearch("")}),
           m("input", {id:"search", size:30, type:"search", autocomplete:"off", value:activeSearch || "", placeholder:"Figment", oninput:searchChanged})),
       m("div", {id:"toolbar"}, 
-        //m("div", {id:"settings",onclick: () => {document.body.classList.toggle("settings")}, target:"_blank"},
-          //m("icon",{},"filter"),"")
       )
     )   
-    
     
     var container = m("div", {id:"container"});
 
@@ -172,11 +158,13 @@ function setup() {
     document.body.appendChild(container);
 }
 
+// Short Month Day format
 function shortDate(date) {
    var monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
    return monthNames[date.getMonth()] + " " + date.getDate()
 }
 
+// Relative date format
 function relativeDate(timestamp) {
   // Make a fuzzy time
   var midnight = new Date();
@@ -202,8 +190,10 @@ function relativeDate(timestamp) {
   return fuzzy;
 }
 
+
+// Event tracking for mouse movement
 function thumbnailEnter(e) {
-console.log("enter", e)
+  //console.log("enter", e)
 }
 
 function thumbnailExit(e) {
@@ -230,6 +220,7 @@ function thumbnailMove(e) {
   target.style.transform = "translateY(-3px) rotate(" + (offset/2) + "deg) translateX(" + (offset * 3)  + "px)" 
 }
 
+// Main render function - creates all thumbnails in the document
 function render(response) {
   if (!response) response = cachedResponse;
   if (response.error) {
@@ -286,19 +277,17 @@ function render(response) {
     var bgcolor = metadata.color;
     if (bgcolor == "rgba(229,229,229,1)") bgcolor = undefined;
     
-    var editor = metadata?.edited?.id//row[COLUMN.EDITOR.index];
-    var editor_img = metadata?.edited?.img//row[COLUMN.EDITOR_AVATAR.index];
+    var editor = metadata?.edited?.id
+    var editor_img = metadata?.edited?.img
 
-    var author = metadata?.created?.id //row[COLUMN.AUTHOR.index];
-    var author_img = metadata?.created?.img //row[COLUMN.AUTHOR_AVATAR.index];
+    var author = metadata?.created?.id
+    var author_img = metadata?.created?.img
 
     var frames = metadata.imgs;
     var modified = new Date(row[COLUMN.MODIFIED.index]);
     var votes = row[COLUMN.VOTES.index];
     var opens = row[COLUMN.OPENS.index];
 
-   // author_img = author_img.replace(/default=.*/, "default=blank");
-    //author_img = author_img.replace(/default=.*/, "default=blank");
     var tagEls = [];
 
     tags.forEach(tag => {
@@ -319,6 +308,7 @@ function render(response) {
     
     var previewEls = [];
     
+    // Render each frame in a given thumbnail
     frames?.forEach(frame => {
       var vertical = (frame.h > frame.w * 1.77) && frame.w <= 480;
       previewEls.push(m("a", {
@@ -330,8 +320,7 @@ function render(response) {
         }));
     });
     
-    
-    
+    // Set up thumbnail element
     var thumbnail = m("div", {className: "file", href:url}, 
       m("a", {href:url, target:"_blank", onclick:() => {recordOpen(key)}},
         m("div", {className:"thumbnail-container", onmouseenter:thumbnailEnter, onmouseleave:thumbnailExit, onmousemove:thumbnailMove},
@@ -381,19 +370,21 @@ function render(response) {
     subheader.appendChild(renderTagHeaderTemplate())
   }
   
+  // Create team list in the upper right
   var teamOptions = response.teams.map(t => m("option", {value:t, selected:t==currentTeam}, t));
   teamOptions.unshift(m("option", {disabled:"disabled"}, "──────────"))
   teamOptions.unshift(m("option", {value:"Favorites", selected:currentTeam == "Favorites"}, "Team Favorites"))
 
 
   teamOptions.push(m("option", {disabled:"disabled"}, "──────────"))
-teamOptions.push(m("option", {value:"*", selected:currentTeam == "*"}, "Everything"))
+  teamOptions.push(m("option", {value:"*", selected:currentTeam == "*"}, "Everything"))
   
   
   var filter = m("div", {id:"team-container"},
     m("select", {id:"team-selector", onchange:selectTeam}, teamOptions)
   );  
   
+  // show team thumbnails above files from other groups
   var content = m("div", {id:"content"},    
     subheader,
     (activeSearch || response.teams.length < 5) ?  "" : filter,
@@ -413,10 +404,12 @@ teamOptions.push(m("option", {value:"*", selected:currentTeam == "*"}, "Everythi
   window.localStorage.setItem("pagecache", container.innerHTML)
 }
 
+// Push open events back to the spreadsheet
 function recordOpen(key) {
   google.script.run.incrementAttributeValue(key, "OPENS", 1);
 }
 
+// Update favorite count on a file
 function toggleFavorite(e) {
   var el = e.target;
   var key = el.id;
@@ -430,11 +423,13 @@ function toggleFavorite(e) {
 
 }
 
+// Set team filter
 function selectTeam(e) {
   var el = e.target;
   var currentTeam = window.localStorage.setItem("my-team", el.value);
   render();
 }
+
 
 function renderTagHeaderTemplate() {
   return m("div", {id:"subheader"},
@@ -477,26 +472,7 @@ function handleAuthorResponse(response) {
   renderAuthorHeaderTemplate()
 }
 
-function submitAddForm(e) {
-  var form = e.target;
-  window.localStorage.setItem("email", form.email.value);
-  
-  if (!form.email.value.length) {
-    alert("Please enter your email address")
-    return false;
-  } else if (!form.url.value.length) {
-    alert("Please enter a figma URL");
-    return false;
-  }
-  
-  var row = [form.email.value, form.url.value, form.desc.value, form.tags.value];
-  google.script.run.withSuccessHandler(() => {
-    fetch();
-    document.body.classList.remove("add");
-  }).addData(row);
-  return false;
-}
-
+// Update search from URL hash
 google.script.url.getLocation(function(location) {
   console.log(location.hash);
   activeSearch = location.hash.replace("//", "#");
@@ -504,12 +480,12 @@ google.script.url.getLocation(function(location) {
 });
 
 
+// Interval to get new data
 var timeTilNextHour = 3600000 - new Date().getTime() % 3600000;
-
 setInterval(fetch, 60 * 60 * 1000); // check again in one hour
 fetch();
 
-
+// Automatically iterate through thumbnails
 var startingThumbnailIndex = -1;
 var slideshowSkipCount = 12;
 function slideshow() {
@@ -533,10 +509,6 @@ setTimeout(() => {
   }
   setInterval(slideshow, 5000);
 }, 5000)
-
-
-
-
 
 </script>
 
