@@ -13,6 +13,7 @@
 var COLUMN = <?!= COLUMN_KEYS ?>;
 var omit_tags = "<?= omit_tags ?>"
 var default_team = "<?= default_team ?>"
+var page_title = "<?= page_title ?>"
 
 // Core create-element function
 var m = function createElement(type, attrs, ...children) {
@@ -144,7 +145,7 @@ function setup() {
   var nav = m("div", {id:"nav"}, 
       m("h1", {},
       m("div", {id:"logo", onclick:e => setSearch("")}),
-          m("input", {id:"search", size:30, type:"search", autocomplete:"off", value:activeSearch || "", placeholder:"Figment", oninput:searchChanged})),
+          m("input", {id:"search", size:30, type:"search", autocomplete:"off", value:activeSearch || "", placeholder:page_title, oninput:searchChanged})),
       m("div", {id:"toolbar"}, 
       )
     )   

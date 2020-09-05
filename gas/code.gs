@@ -29,25 +29,26 @@ function onOpen() {
 function doGet(e) {
   var parameters = e.parameters;
   var output;
+  var scriptProperties = PropertiesService.getScriptProperties();
+  var title = scriptProperties.getProperty("page_title") || "Figment";
   if (parameters.preview) { // Render image preview only
     var template = HtmlService.createTemplateFromFile('gas/preview')
-    var scriptProperties = PropertiesService.getScriptProperties();
     template.url = parameters.preview[0];
     template.thumbnailUrl = getFigmaFramePreview_(parameters.preview[0]);
     output = template.evaluate();
   } else { // Render home screen
     var template = HtmlService.createTemplateFromFile('gas/index')
-    var scriptProperties = PropertiesService.getScriptProperties();
     template.COLUMN_KEYS = JSON.stringify(COLUMN);
     template.omit_tags = scriptProperties.getProperty("omit_tags");
     template.slack_team = scriptProperties.getProperty("slack_team");
     template.figma_host = scriptProperties.getProperty("figma_server") || "www.figma.com";
     template.default_team = scriptProperties.getProperty("default_team") || "*";
+    template.page_title = title;
     output = template.evaluate();
   }
   
   return output
-    .setTitle("Figment")
+    .setTitle(title)
     .addMetaTag('viewport', 'width=device-width, initial-scale=1')
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
 }
